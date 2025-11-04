@@ -33,11 +33,11 @@
     "lint:only": "eslint --ext ts,tsx,js",
     "lint:fix": "npm run lint:only -- --fix",
     "predeploy-staging": "export VITE_STAGE=staging&& npm run build",
-    "exec-deploy-staging": "aws s3 sync build/ s3://staging-b1-transfer",
+    "exec-deploy-staging": "aws s3 sync build/ s3://staging-chums-transfer",
     "postdeploy-staging": "aws cloudfront create-invalidation --distribution-id E28G9AODQAH4HQ --paths \"/*\"",
     "deploy-staging": "npm run predeploy-staging && npm run exec-deploy-staging && npm run postdeploy-staging",
     "predeploy-prod": "export VITE_STAGE=prod&& npm run build",
-    "exec-deploy-prod": "aws s3 sync build/ s3://b1-transfer",
+    "exec-deploy-prod": "aws s3 sync build/ s3://chums-transfer",
     "postdeploy-prod": "aws cloudfront create-invalidation --distribution-id E29Q1TKCS5G75P --paths \"/*\"",
     "deploy-prod": "npm run predeploy-prod && npm run exec-deploy-prod && npm run postdeploy-prod",
     "postinstall": "copyfiles -a -f node_modules/@churchapps/apphelper/public/locales/** public/apphelper/locales && copyfiles -a -f node_modules/@churchapps/apphelper/public/css/** public/apphelper/css"
