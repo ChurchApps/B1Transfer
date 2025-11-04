@@ -30,7 +30,7 @@ let questions: ImportQuestionsInterface[] = [];
 let formSubmissions: ImportFormSubmissions[] = [];
 let answers: ImportAnswerInterface[] = [];
 
-const readChumsZip = async (file: File): Promise<ImportDataInterface> => {
+const readB1Zip = async (file: File): Promise<ImportDataInterface> => {
   const zip = await JSZip.loadAsync(file);
 
   zip.files["people.csv"] && loadPeople(UploadHelper.readCsvString(await zip.file("people.csv").async("string")), zip);
@@ -192,4 +192,4 @@ const assignHousehold = (households: ImportHouseholdInterface[], person: any) =>
   person.householdKey = households[households.length - 1].importKey;
 }
 
-export default readChumsZip;
+export default readB1Zip;

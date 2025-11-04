@@ -11,7 +11,7 @@ import {
 } from "../ImportHelper";
 import Papa from "papaparse";
 
-const generateChumsZip = async (importData: ImportDataInterface, updateProgress: (name: string, status: string) => void) => {
+const generateB1Zip = async (importData: ImportDataInterface, updateProgress: (name: string, status: string) => void) => {
   let files = [];
 
   const sleep = (milliseconds: number) => new Promise(resolve => setTimeout(resolve, milliseconds))
@@ -85,7 +85,7 @@ const exportGroupMembers = async (importData: ImportDataInterface, runImport: (k
 
 const compressZip = async (files: { name: string, contents: any }[], runImport: (keyName: string, code: () => Promise<void>) => Promise<void>) => {
   await runImport("Compressing", async () => {
-    UploadHelper.zipFiles(files, "ChumsExport.zip");
+    UploadHelper.zipFiles(files, "B1Export.zip");
   });
 }
 
@@ -263,4 +263,4 @@ const exportPhotos = async (people: PersonInterface[], files: { name: string, co
   });
 }
 
-export default generateChumsZip;
+export default generateB1Zip;

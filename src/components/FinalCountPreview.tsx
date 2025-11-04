@@ -1,11 +1,10 @@
-import React from "react";
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from "@mui/material";
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material";
 import { ImportDataInterface } from "../helpers/ImportHelper";
 import { DisplayBox } from "@churchapps/apphelper";
 
 interface Props {
   importData: ImportDataInterface;
-  chumsData: ImportDataInterface;
+  b1Data: ImportDataInterface;
 }
 
 export const FinalCountPreview = (props: Props) => {
@@ -17,15 +16,15 @@ export const FinalCountPreview = (props: Props) => {
 
   const getRows = () => {
     let rows: any[] = [];
-    const keys = Object.keys(props.chumsData);
+    const keys = Object.keys(props.b1Data);
     keys.forEach((key, index) => {
-      let chumsData = props.chumsData[key as keyof ImportDataInterface];
+      let b1Data = props.b1Data[key as keyof ImportDataInterface];
       let importData = props.importData[key as keyof ImportDataInterface];
-      const total = chumsData.length + importData.length;
+      const total = b1Data.length + importData.length;
       rows.push(
         <TableRow key={index}>
           <TableCell>{camelCaseToWords(key)}</TableCell>
-          <TableCell>{chumsData.length}</TableCell>
+          <TableCell>{b1Data.length}</TableCell>
           <TableCell>{importData.length}</TableCell>
           <TableCell>{total}</TableCell>
         </TableRow>

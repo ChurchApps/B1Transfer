@@ -1,5 +1,3 @@
-import React from "react"
-import { Dots } from "react-activity";
 import { Box, Typography, Button } from "@mui/material";
 import { ImportDataInterface } from "../helpers/ImportHelper";
 import { ImportPreview } from "../components";
@@ -24,8 +22,8 @@ export const TabPreview = (props: Props) => {
         Step 2 - Preview
       </Typography>
 
-      {props.isLoadingSourceData && props.dataImportSource === DataSourceType.CHUMS_DB && (
-        <Loading message="Loading data from CHUMS database..." />
+      {props.isLoadingSourceData && props.dataImportSource === DataSourceType.B1_DB && (
+        <Loading message="Loading data from B1 database..." />
       )}
 
       {props.importData && (

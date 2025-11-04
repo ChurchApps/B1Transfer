@@ -9,16 +9,16 @@ import ReactGA from "react-ga4";
 import { EnvironmentHelper } from "./helpers";
 import { Box } from "@mui/material";
 
-export const Login: React.FC = (props: any) => {
+export const Login: React.FC = () => {
   const [errors] = React.useState<string[]>([])
   const [cookies] = useCookies();
   const location = useLocation();
 
-  const postChurchRegister = async (church: ChurchInterface) => {
+  const postChurchRegister = async (_church: ChurchInterface) => {
     if (EnvironmentHelper.Common.GoogleAnalyticsTag !== "") ReactGA.event({ category: "Church", action: "Register" });
   }
 
-  const trackUserRegister = async (user: UserInterface) => {
+  const trackUserRegister = async (_user: UserInterface) => {
     if (EnvironmentHelper.Common.GoogleAnalyticsTag !== "") ReactGA.event({ category: "User", action: "Register" });
   }
 
@@ -47,7 +47,7 @@ export const Login: React.FC = (props: any) => {
             marginRight: "auto",
           }}
         >
-          <LoginPage auth={auth} context={context} jwt={jwt} appName="CHUMS" appUrl={window.location.href} churchRegisteredCallback={postChurchRegister} userRegisteredCallback={trackUserRegister} callbackErrors={errors} returnUrl={returnUrl} />
+          <LoginPage auth={auth} context={context} jwt={jwt} appName="B1Admin" appUrl={window.location.href} churchRegisteredCallback={postChurchRegister} userRegisteredCallback={trackUserRegister} callbackErrors={errors} returnUrl={returnUrl} />
         </Box>
       </Box>
     );

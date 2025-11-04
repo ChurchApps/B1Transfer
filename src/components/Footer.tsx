@@ -10,7 +10,7 @@ export const Footer: React.FC = () => (
   }}>
     <img src="/images/logo-footer.png" alt="logo" style={{ maxWidth: 300, marginBottom: 20 }} />
     <Typography variant="body2">
-      Phone: 918-994-2638 | support@chums.org
+      Phone: 918-994-2638 | support@b1.org
     </Typography>
     <Typography variant="body2">
       2022 © Live Church Solutions. All rights reserved.

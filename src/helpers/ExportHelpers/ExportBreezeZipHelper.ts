@@ -56,7 +56,7 @@ const compressZip = async (files: {name: string, contents: any}[], runImport: (k
     UploadHelper.zipFiles(files, "BreezeExport.zip");
   });
 }
-const exportCampuses = async (importData: ImportDataInterface, runImport: (keyName: string, code: () => void) => Promise<void>) => {
+const exportCampuses = async (_importData: ImportDataInterface, runImport: (keyName: string, code: () => void) => Promise<void>) => {
   let data: any[] = [];
   await runImport("Campuses/Services/Times", async () => {
   });
@@ -116,7 +116,7 @@ const exportGroups = async (importData : ImportDataInterface, runImport: (keyNam
       let gst: ImportGroupServiceTimeInterface[] = ArrayHelper.getAll(groupServiceTimes, "groupId", g.id);
       if (gst.length === 0) serviceTimeIds = [""];
       else gst.forEach((time) => time?.serviceTimeId ? serviceTimeIds.push(time?.serviceTimeId?.toString()) : null );
-      serviceTimeIds.forEach((serviceTimeId) => {
+      serviceTimeIds.forEach((_serviceTimeId) => {
         let row = {
           "Event ID": g.importKey,
           "Instance ID": g.id,
@@ -174,12 +174,12 @@ const exportDonations = async (importData : ImportDataInterface, runImport: (key
   return data;
 }
 
-const exportAttendance = async (importData : ImportDataInterface, runImport: (keyName: string, code: () => void) => Promise<void>) => {
+const exportAttendance = async (_importData : ImportDataInterface, runImport: (keyName: string, code: () => void) => Promise<void>) => {
   await runImport("Attendance", async () => {
   });
 }
 
-const exportForms = async (importData : ImportDataInterface, runImport: (keyName: string, code: () => void) => Promise<void>) => {
+const exportForms = async (_importData : ImportDataInterface, runImport: (keyName: string, code: () => void) => Promise<void>) => {
   await runImport("Forms", async () => {
   })
   await runImport("Questions", async () => {

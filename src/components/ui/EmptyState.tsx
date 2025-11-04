@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { Stack, Typography, Button, Paper, TableCell } from '@mui/material';
+import { Stack, Typography, Paper, TableCell } from '@mui/material';
 
 interface EmptyStateProps {
   icon: ReactNode;

@@ -1,14 +1,14 @@
 import { ApiHelper, CommonEnvironmentHelper, Locale } from "@churchapps/apphelper";
 
 export class EnvironmentHelper {
-  //static ChumsUrl = "";
+  //static B1Url = "";
   static Common = CommonEnvironmentHelper;
 
   //static ContentRoot = "";
   //static GoogleAnalyticsTag = "";
 
   static init = async () => {
-    const stage = process.env.REACT_APP_STAGE;
+    const stage = import.meta.env.VITE_STAGE;
     console.log("STAGE IS", stage);
 
     switch (stage) {
@@ -31,15 +31,15 @@ export class EnvironmentHelper {
   static initDev = () => {
     this.initStaging()
     /*;
-    EnvironmentHelper.AttendanceApi = process.env.REACT_APP_ATTENDANCE_API || EnvironmentHelper.AttendanceApi;
-    EnvironmentHelper.GivingApi = process.env.REACT_APP_GIVING_API || EnvironmentHelper.GivingApi;
-    EnvironmentHelper.MembershipApi = process.env.REACT_APP_MEMBERSHIP_API || EnvironmentHelper.MembershipApi;
+    EnvironmentHelper.AttendanceApi = import.meta.env.VITE_ATTENDANCE_API || EnvironmentHelper.AttendanceApi;
+    EnvironmentHelper.GivingApi = import.meta.env.VITE_GIVING_API || EnvironmentHelper.GivingApi;
+    EnvironmentHelper.MembershipApi = import.meta.env.VITE_MEMBERSHIP_API || EnvironmentHelper.MembershipApi;
     */
-    //EnvironmentHelper.ContentRoot = process.env.REACT_APP_CONTENT_ROOT || EnvironmentHelper.ContentRoot;
+    //EnvironmentHelper.ContentRoot = import.meta.env.VITE_CONTENT_ROOT || EnvironmentHelper.ContentRoot;
 
 
-    //EnvironmentHelper.GoogleAnalyticsTag = process.env.REACT_APP_GOOGLE_ANALYTICS || EnvironmentHelper.GoogleAnalyticsTag;
-    //EnvironmentHelper.ChumsUrl = process.env.REACT_APP_CHUMS_URL || EnvironmentHelper.ChumsUrl;
+    //EnvironmentHelper.GoogleAnalyticsTag = import.meta.env.VITE_GOOGLE_ANALYTICS || EnvironmentHelper.GoogleAnalyticsTag;
+    //EnvironmentHelper.B1Url = import.meta.env.VITE_B1_URL || EnvironmentHelper.B1Url;
   }
 
   //NOTE: None of these values are secret.
@@ -50,7 +50,7 @@ export class EnvironmentHelper {
     EnvironmentHelper.MembershipApi = "https://membershipapi.staging.churchapps.org";
     EnvironmentHelper.ContentRoot = "https://content.staging.churchapps.org";
     EnvironmentHelper.GoogleAnalyticsTag = "";
-    EnvironmentHelper.ChumsUrl = "https://app.staging.chums.org";*/
+    EnvironmentHelper.B1Url = "https://app.staging.b1.org";*/
   }
 
   //NOTE: None of these values are secret.
@@ -61,7 +61,7 @@ export class EnvironmentHelper {
     EnvironmentHelper.MembershipApi = "https://membershipapi.churchapps.org";
     EnvironmentHelper.ContentRoot = "https://content.churchapps.org";
     EnvironmentHelper.GoogleAnalyticsTag = "UA-164774603-4";
-    EnvironmentHelper.ChumsUrl = "https://app.chums.org";*/
+    EnvironmentHelper.B1Url = "https://app.b1.org";*/
   }
 
 }

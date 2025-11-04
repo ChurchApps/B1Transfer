@@ -1,6 +1,6 @@
-import React, { useState } from "react";
-import { Tabs, Tab, Box, Typography, Button, Stack, Grid, Card, CardContent } from "@mui/material";
-import { ImportExport as ImportExportIcon, CloudSync as CloudSyncIcon } from "@mui/icons-material";
+import { useState } from "react";
+import { Tabs, Tab, Box, Typography, Button, Card, CardContent } from "@mui/material";
+import { ImportExport as ImportExportIcon } from "@mui/icons-material";
 import "react-activity/dist/Dots.css"
 import "react-activity/dist/Windmill.css"
 import { Footer, Header } from "./components"
@@ -44,12 +44,12 @@ export const Home = () => {
         <PageHeader
           icon={<ImportExportIcon />}
           title="Import/Export Tool"
-          subtitle="Backup, transfer, and import your CHUMS data"
+          subtitle="Backup, transfer, and import your B1 data"
         >
           <Button
             variant="outlined"
             size="small"
-            href="https://chums.org/"
+            href="https://b1.org/"
             sx={{
               color: '#FFF',
               borderColor: 'rgba(255,255,255,0.5)',
@@ -61,7 +61,7 @@ export const Home = () => {
               }
             }}
           >
-            Go to CHUMS
+            Go to B1
           </Button>
         </PageHeader>
 
@@ -75,10 +75,10 @@ export const Home = () => {
           }}>
             <CardContent sx={{ p: 4 }}>
               <Typography variant="body1" paragraph sx={{ color: 'text.primary', mb: 2 }}>
-                Welcome to the import/export tool for CHUMS. You can use this file to backup your CHUMS data or transfer your data out of CHUMS to be used in another system. If you're just getting started you can also use this tool to import existing data into CHUMS.
+                Welcome to the import/export tool for B1. You can use this file to backup your B1 data or transfer your data out of B1 to be used in another system. If you're just getting started you can also use this tool to import existing data into B1.
               </Typography>
               <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-                We support three different data formats: the CHUMS export file format, along with Breeze and Planning Center file formats. You can use this tool to convert between any of these three in addition to reading/writing to your hosted CHUMS database.
+                We support three different data formats: the B1 export file format, along with Breeze and Planning Center file formats. You can use this tool to convert between any of these three in addition to reading/writing to your hosted B1 database.
               </Typography>
             </CardContent>
           </Card>

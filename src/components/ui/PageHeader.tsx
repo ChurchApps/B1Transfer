@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { Box, Typography, Stack, Button } from '@mui/material';
+import { Box, Typography, Stack } from '@mui/material';
 
 interface PageHeaderProps {
   icon: ReactNode;

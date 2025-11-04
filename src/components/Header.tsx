@@ -1,5 +1,5 @@
 import React, { useState } from "react"
-import { AppBar, Toolbar, Box, Button, Typography, Link, Avatar, IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Divider } from "@mui/material";
+import { AppBar, Toolbar, Box, Typography, Link, Avatar, IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Divider } from "@mui/material";
 import { LogoutOutlined } from "@mui/icons-material";
 import { UserHelper } from "@churchapps/apphelper";
 
@@ -69,7 +69,7 @@ export const Header: React.FC = () => {
             >
               <img
                 src="/images/logo-icon.png"
-                alt="CHUMS"
+                alt="B1.church Transfer"
                 style={{
                   height: '35px',
                   marginRight: '15px'
@@ -86,7 +86,7 @@ export const Header: React.FC = () => {
                   display: { xs: 'none', md: 'block' }
                 }}
               >
-                CHUMS
+                B1.Church Transfer Tool
               </Typography>
             </Link>
           </Box>

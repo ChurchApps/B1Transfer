@@ -1,6 +1,6 @@
-# ChumsTransfer
+# B1Transfer
 
-An import/export/conversion tool for Chums
+An import/export/conversion tool for B1
 
 ## Get Involved
 

@@ -43,12 +43,12 @@ const generatePlanningCenterZip = async (importData: ImportDataInterface, update
   compressZip(files, runImport);
 }
 
-const exportCampuses = async (importData : ImportDataInterface, runImport: (keyName: string, code: () => void) => Promise<void>) => {
+const exportCampuses = async (_importData : ImportDataInterface, runImport: (keyName: string, code: () => void) => Promise<void>) => {
   await runImport("Campuses/Services/Times", async () => {
   });
 }
 
-const exportGroupMembers = async (importData : ImportDataInterface,runImport: (keyName: string, code: () => void) => Promise<void>) => {
+const exportGroupMembers = async (_importData : ImportDataInterface,runImport: (keyName: string, code: () => void) => Promise<void>) => {
   await runImport("Group Members", async () => {
   });
 }
@@ -134,7 +134,7 @@ const exportPeople = async (importData: ImportDataInterface, runImport: (keyName
   return Papa.unparse(data)
 }
 
-const exportGroups = async (importData : ImportDataInterface, runImport: (keyName: string, code: () => void) => Promise<void>) => {
+const exportGroups = async (_importData : ImportDataInterface, runImport: (keyName: string, code: () => void) => Promise<void>) => {
 
   await runImport("Groups", async () => {
 
@@ -143,7 +143,7 @@ const exportGroups = async (importData : ImportDataInterface, runImport: (keyNam
   });
 }
 
-const exportDonations = async (importData : ImportDataInterface, runImport: (keyName: string, code: () => void) => Promise<void>) => {
+const exportDonations = async (_importData : ImportDataInterface, runImport: (keyName: string, code: () => void) => Promise<void>) => {
 
   await runImport("Funds", async () => {
   });
@@ -158,29 +158,29 @@ const exportDonations = async (importData : ImportDataInterface, runImport: (key
   });
 }
 
-const exportAttendance = async (importData : ImportDataInterface, runImport: (keyName: string, code: () => void) => Promise<void>) => {
+const exportAttendance = async (_importData : ImportDataInterface, runImport: (keyName: string, code: () => void) => Promise<void>) => {
   await runImport("Attendance", async () => {
   });
 }
 
-const exportForms = async (importData : ImportDataInterface, runImport: (keyName: string, code: () => void) => Promise<void>) => {
+const exportForms = async (_importData : ImportDataInterface, runImport: (keyName: string, code: () => void) => Promise<void>) => {
   await runImport("Forms", async () => {
   })
 }
-const exportQuestions = async (importData : ImportDataInterface, runImport: (keyName: string, code: () => void) => Promise<void>) => {
+const exportQuestions = async (_importData : ImportDataInterface, runImport: (keyName: string, code: () => void) => Promise<void>) => {
   await runImport("Questions", async () => {
   })
 }
-const exportAnswers = async (importData : ImportDataInterface, runImport: (keyName: string, code: () => void) => Promise<void>) => {
+const exportAnswers = async (_importData : ImportDataInterface, runImport: (keyName: string, code: () => void) => Promise<void>) => {
   await runImport("Answers", async () => {
   })
 }
-const exportFormSubmissions = async (importData : ImportDataInterface, runImport: (keyName: string, code: () => void) => Promise<void>) => {
+const exportFormSubmissions = async (_importData : ImportDataInterface, runImport: (keyName: string, code: () => void) => Promise<void>) => {
   await runImport("Form Submissions", async () => {
   })
 }
 
-const exportPhotos = async (files: { name: string, contents: string | Buffer }[], runImport: (keyName: string, code: () => void) => Promise<void>) => {
+const exportPhotos = async (_files: { name: string, contents: string | Buffer }[], runImport: (keyName: string, code: () => void) => Promise<void>) => {
   await runImport("Photos", async () => {
   });
 }

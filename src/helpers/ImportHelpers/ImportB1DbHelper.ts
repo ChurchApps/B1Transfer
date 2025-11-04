@@ -32,9 +32,9 @@ let questions: ImportQuestionsInterface[] = [];
 let formSubmissions: ImportFormSubmissions[] = [];
 let answers: ImportAnswerInterface[] = [];
 
-const getChumsData = async (): Promise<ImportDataInterface> => {
+const getB1Data = async (): Promise<ImportDataInterface> => {
   await Promise.all([getPeople(), getCampusServiceTimes(), getGroups(), getGroupMembers(), getAttendance(), getDonations(), getForms(), getQuestions(), getFormSubmissions(), getAnswers()]).catch(error => {
-    if (error.message.includes("Unauthorized")) alert("Please log in to access Chums data")
+    if (error.message.includes("Unauthorized")) alert("Please log in to access B1 data")
   });
 
   return {
@@ -180,4 +180,4 @@ const getAttendance = async () => {
   return Papa.unparse(data);
 }
 
-export default getChumsData;
+export default getB1Data;

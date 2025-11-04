@@ -1,14 +1,14 @@
 import React, { useMemo, useCallback } from "react";
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Tabs, Tab, Alert, Box, Typography } from "@mui/material";
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tabs, Tab, Alert, Box, Typography } from "@mui/material";
 import { ImportHelper, DateHelper, CurrencyHelper } from ".";
-import { ImportGroupInterface, ImportPersonInterface, ImportDonationBatchInterface, ImportDonationInterface, ImportFundInterface, ImportDataInterface } from "../helpers/ImportHelper";
+import { ImportGroupInterface, ImportPersonInterface, ImportDonationBatchInterface, ImportFundInterface, ImportDataInterface } from "../helpers/ImportHelper";
 
 interface Props { importData: ImportDataInterface, triggerRender: number }
 
 export const ImportPreview: React.FC<Props> = React.memo((props) => {
   const [activeTab, setActiveTab] = React.useState('people');
 
-  const handleTabChange = useCallback((event: React.SyntheticEvent, newValue: string) => {
+  const handleTabChange = useCallback((_event: React.SyntheticEvent, newValue: string) => {
     setActiveTab(newValue);
   }, []);
 
@@ -256,7 +256,7 @@ export const ImportPreview: React.FC<Props> = React.memo((props) => {
 
   if (props.importData.people.length === 0) return (
     <Alert severity="info">
-      <strong>Important:</strong> This tool is designed to help you load your initial data into the system. Using it after you have been using Chums for a while is risky and may result in duplicated data.
+      <strong>Important:</strong> This tool is designed to help you load your initial data into the system. Using it after you have been using B1 for a while is risky and may result in duplicated data.
     </Alert>
   );
   else return (

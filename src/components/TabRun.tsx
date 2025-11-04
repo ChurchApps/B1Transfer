@@ -1,8 +1,6 @@
 import React from "react"
-import { Windmill } from "react-activity";
 import { Box, Typography, List, ListItem, ListItemIcon, ListItemText, Card, CardContent, Alert } from "@mui/material";
 import { CheckCircle, RadioButtonUnchecked, Error, Loop } from "@mui/icons-material";
-import { DisplayBox } from ".";
 import { DataSourceType } from "../types";
 
 interface Props {
@@ -56,7 +54,7 @@ export const TabRun = (props: Props) => {
     if (!props.isExporting) return null;
 
     let steps = ["Campuses/Services/Times", "People", "Photos", "Groups", "Group Members", "Donations", "Attendance", "Forms", "Questions", "Answers", "Form Submissions", "Compressing"];
-    if (props.dataExportSource === DataSourceType.CHUMS_DB) steps = steps.filter(s => s !== "Compressing")
+    if (props.dataExportSource === DataSourceType.B1_DB) steps = steps.filter(s => s !== "Compressing")
     let stepsHtml: React.ReactElement[] = [];
     steps.forEach((s) => stepsHtml.push(getProgress(s)));
 

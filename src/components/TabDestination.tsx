@@ -1,12 +1,12 @@
-import React, { useState } from "react"
+import { useState } from "react"
 import { Select, MenuItem, FormControl, InputLabel, Box, Typography, Button, Alert } from "@mui/material";
 import { ImportDataInterface } from "../helpers/ImportHelper";
 import { DataSourceType } from "../types";
 import { ApiHelper } from "@churchapps/apphelper";
-import getChumsData from "../helpers/ImportHelpers/ImportChumsDbHelper"
+import getB1Data from "../helpers/ImportHelpers/ImportB1DbHelper"
 import generateBreezeZip from "../helpers/ExportHelpers/ExportBreezeZipHelper"
-import generateChumsZip from "../helpers/ExportHelpers/ExportChumsZipHelper"
-import exportToChumsDb from "../helpers/ExportHelpers/ExportChumsDbHelper"
+import generateB1Zip from "../helpers/ExportHelpers/ExportB1ZipHelper"
+import exportToB1Db from "../helpers/ExportHelpers/ExportB1DbHelper"
 import generatePlanningCenterZip from "../helpers/ExportHelpers/ExportPlanningCenterZipHelper"
 import { FinalCountPreview } from "./FinalCountPreview";
 
@@ -23,7 +23,7 @@ interface Props {
 }
 
 export const TabDestination = (props: Props) => {
-  const [chumsData, setChumsData] = useState<ImportDataInterface>();
+  const [b1Data, setB1Data] = useState<ImportDataInterface>();
   const [loginError, setLoginError] = useState<boolean>(false);
   let progress: any = {};
 
@@ -32,20 +32,20 @@ export const TabDestination = (props: Props) => {
     props.setStatus({ ...progress });
   }
 
-  const getChumsDBData = async () => {
-    const data = await getChumsData();
-    setChumsData(data);
+  const getB1DBData = async () => {
+    const data = await getB1Data();
+    setB1Data(data);
   }
 
   const handleSelect = (e: string) => {
     setLoginError(false);
-    if (e === DataSourceType.CHUMS_DB && !ApiHelper.isAuthenticated) {
+    if (e === DataSourceType.B1_DB && !ApiHelper.isAuthenticated) {
       setLoginError(true);
       return;
     }
-    if (e === DataSourceType.CHUMS_DB) {
+    if (e === DataSourceType.B1_DB) {
       props.setDataExportSource(e);
-      getChumsDBData();
+      getB1DBData();
       props.setShowFinalCount(true);
     } else {
       props.setShowFinalCount(false);
@@ -62,12 +62,12 @@ export const TabDestination = (props: Props) => {
       props.setIsExporting(true)
       props.setActiveTab("step4")
       switch (e) {
-        case DataSourceType.CHUMS_DB: {
-          await exportToChumsDb(props.importData, setProgress)
+        case DataSourceType.B1_DB: {
+          await exportToB1Db(props.importData, setProgress)
           break;
         }
-        case DataSourceType.CHUMS_ZIP: {
-          await generateChumsZip(props.importData, setProgress)
+        case DataSourceType.B1_ZIP: {
+          await generateB1Zip(props.importData, setProgress)
           break;
         }
         case DataSourceType.BREEZE_ZIP: {
@@ -96,7 +96,7 @@ export const TabDestination = (props: Props) => {
 
       {loginError && (
         <Alert severity="error" sx={{ mb: 2, maxWidth: 500 }}>
-          You must be logged in to use Chums Database as a destination. Please log in first.
+          You must be logged in to use B1 Database as a destination. Please log in first.
         </Alert>
       )}
 
@@ -108,21 +108,21 @@ export const TabDestination = (props: Props) => {
           label="Export Destination"
           onChange={(e) => handleSelect(e.target.value)}
         >
-          <MenuItem value={DataSourceType.CHUMS_DB}>Chums Database</MenuItem>
-          <MenuItem value={DataSourceType.CHUMS_ZIP}>Chums Export Zip</MenuItem>
+          <MenuItem value={DataSourceType.B1_DB}>B1 Database</MenuItem>
+          <MenuItem value={DataSourceType.B1_ZIP}>B1 Export Zip</MenuItem>
           <MenuItem value={DataSourceType.BREEZE_ZIP}>Breeze Export Zip</MenuItem>
           <MenuItem value={DataSourceType.PLANNING_CENTER_ZIP}>Planning Center zip</MenuItem>
         </Select>
       </FormControl>
 
-      {props.showFinalCount && props.importData && chumsData && (
+      {props.showFinalCount && props.importData && b1Data && (
         <Box sx={{ mt: 3 }}>
-          <FinalCountPreview importData={props.importData} chumsData={chumsData} />
+          <FinalCountPreview importData={props.importData} b1Data={b1Data} />
           <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
             <Button
               variant="contained"
               color="success"
-              onClick={() => handleExport(DataSourceType.CHUMS_DB)}
+              onClick={() => handleExport(DataSourceType.B1_DB)}
               sx={{ textTransform: 'none', borderRadius: 2, fontWeight: 600, px: 4 }}
             >
               Start Transfer

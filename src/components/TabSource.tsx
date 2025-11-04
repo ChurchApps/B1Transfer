@@ -1,10 +1,10 @@
-import React, { useRef, useState } from "react"
+import { useRef, useState } from "react"
 import { Select, MenuItem, FormControl, InputLabel, Box, Typography, Button, Link, Alert } from "@mui/material";
 import { ImportDataInterface } from "../helpers/ImportHelper";
 import { DataSourceType } from "../types";
 import { ApiHelper } from "@churchapps/apphelper";
-import readChumsZip from "../helpers/ImportHelpers/ImportChumsZipHelper"
-import getChumsData from "../helpers/ImportHelpers/ImportChumsDbHelper"
+import readB1Zip from "../helpers/ImportHelpers/ImportB1ZipHelper"
+import getB1Data from "../helpers/ImportHelpers/ImportB1DbHelper"
 import readBreezeZip from "../helpers/ImportHelpers/ImportBreezeZipHelper"
 import readPlanningCenterZip from "../helpers/ImportHelpers/ImportPlanningCenterZipHelper"
 
@@ -19,13 +19,13 @@ interface Props {
 
 export const TabSource = (props: Props) => {
   const inputRef = useRef<HTMLInputElement>(null);
-  const inputIsFile = props.dataImportSource !== DataSourceType.CHUMS_DB;
+  const inputIsFile = props.dataImportSource !== DataSourceType.B1_DB;
   const [, setUploadedFileName] = useState<string | null>(null);
   const [loginError, setLoginError] = useState<boolean>(false);
 
   const dataSourceDropDown = [
-    { label: "Chums DB", value: DataSourceType.CHUMS_DB },
-    { label: "Chums zip", value: DataSourceType.CHUMS_ZIP },
+    { label: "B1 DB", value: DataSourceType.B1_DB },
+    { label: "B1 zip", value: DataSourceType.B1_ZIP },
     { label: "Breeze zip", value: DataSourceType.BREEZE_ZIP },
     { label: "Planning center zip", value: DataSourceType.PLANNING_CENTER_ZIP }
   ];
@@ -35,8 +35,8 @@ export const TabSource = (props: Props) => {
     props.setImportData(null)
     let importData: ImportDataInterface;
     switch (props.dataImportSource) {
-      case DataSourceType.CHUMS_ZIP: {
-        importData = await readChumsZip(inputRef.current?.files[0])
+      case DataSourceType.B1_ZIP: {
+        importData = await readB1Zip(inputRef.current?.files[0])
         break;
       }
       case DataSourceType.BREEZE_ZIP: {
@@ -57,7 +57,7 @@ export const TabSource = (props: Props) => {
   const importFromDb = async () => {
     props.setImportData(null)
     let importData: ImportDataInterface;
-    importData = await getChumsData();
+    importData = await getB1Data();
     props.setImportData(importData);
   };
 
@@ -73,12 +73,12 @@ export const TabSource = (props: Props) => {
 
   const handleImportSelection = (e: string) => {
     setLoginError(false);
-    if (e === DataSourceType.CHUMS_DB && !ApiHelper.isAuthenticated) {
+    if (e === DataSourceType.B1_DB && !ApiHelper.isAuthenticated) {
       setLoginError(true);
       return;
     }
     props.setDataImportSource(e)
-    if (e === DataSourceType.CHUMS_DB) {
+    if (e === DataSourceType.B1_DB) {
       props.setActiveTab("step2")
       importFromDb();
     }
@@ -95,7 +95,7 @@ export const TabSource = (props: Props) => {
 
       {loginError && (
         <Alert severity="error" sx={{ mb: 2, maxWidth: 500 }}>
-          You must be logged in to use Chums Database as a source. Please log in first.
+          You must be logged in to use B1 Database as a source. Please log in first.
         </Alert>
       )}
 
@@ -107,8 +107,8 @@ export const TabSource = (props: Props) => {
           label="Data Source"
           onChange={(e) => handleImportSelection(e.target.value)}
         >
-          <MenuItem value={DataSourceType.CHUMS_DB}>Chums Database</MenuItem>
-          <MenuItem value={DataSourceType.CHUMS_ZIP}>Chums Import Zip</MenuItem>
+          <MenuItem value={DataSourceType.B1_DB}>B1 Database</MenuItem>
+          <MenuItem value={DataSourceType.B1_ZIP}>B1 Import Zip</MenuItem>
           <MenuItem value={DataSourceType.BREEZE_ZIP}>Breeze Import Zip</MenuItem>
           <MenuItem value={DataSourceType.PLANNING_CENTER_ZIP}>Planning Center zip</MenuItem>
         </Select>
@@ -123,7 +123,7 @@ export const TabSource = (props: Props) => {
           <Button onClick={handleSelectFile} variant="outlined" color="primary" sx={{ textTransform: 'none', borderRadius: 2, fontWeight: 600, px: 4 }}>
             Upload
           </Button>
-          {(props.dataImportSource === DataSourceType.CHUMS_ZIP) && (
+          {(props.dataImportSource === DataSourceType.B1_ZIP) && (
             <Box sx={{ mt: 1 }}>
               <Typography variant="body2">
                 You can download sample files <Link href="/sampleimport.zip">here</Link>.
