@@ -1,8 +1,8 @@
-import { useRef, useState } from "react"
+import React, { useRef, useState } from "react"
 import { Select, MenuItem, FormControl, InputLabel, Box, Typography, Button, Link, Alert } from "@mui/material";
 import { ImportDataInterface } from "../helpers/ImportHelper";
 import { DataSourceType } from "../types";
-import { ApiHelper } from "@churchapps/apphelper";
+import UserContext from "../UserContext";
 import readB1Zip from "../helpers/ImportHelpers/ImportB1ZipHelper"
 import getB1Data from "../helpers/ImportHelpers/ImportB1DbHelper"
 import readBreezeZip from "../helpers/ImportHelpers/ImportBreezeZipHelper"
@@ -18,6 +18,7 @@ interface Props {
 }
 
 export const TabSource = (props: Props) => {
+  const context = React.useContext(UserContext);
   const inputRef = useRef<HTMLInputElement>(null);
   const inputIsFile = props.dataImportSource !== DataSourceType.B1_DB;
   const [, setUploadedFileName] = useState<string | null>(null);
@@ -73,7 +74,7 @@ export const TabSource = (props: Props) => {
 
   const handleImportSelection = (e: string) => {
     setLoginError(false);
-    if (e === DataSourceType.B1_DB && !ApiHelper.isAuthenticated) {
+    if (e === DataSourceType.B1_DB && !context?.user) {
       setLoginError(true);
       return;
     }
@@ -95,7 +96,11 @@ export const TabSource = (props: Props) => {
 
       {loginError && (
         <Alert severity="error" sx={{ mb: 2, maxWidth: 500 }}>
-          You must be logged in to use B1 Database as a source. Please log in first.
+          You must be logged in to use B1 Database as a source. Please{' '}
+          <Link href="/login" sx={{ color: 'inherit', fontWeight: 'bold', textDecoration: 'underline' }}>
+            log in
+          </Link>{' '}
+          first.
         </Alert>
       )}
 

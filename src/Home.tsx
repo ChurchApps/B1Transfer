@@ -39,7 +39,7 @@ export const Home = () => {
   return (
     <>
       <Header />
-      <Box sx={{ mt: 8, minHeight: 'calc(100vh - 200px)' }}>
+      <Box sx={{ minHeight: 'calc(100vh - 200px)' }}>
         {/* Page Header */}
         <PageHeader
           icon={<ImportExportIcon />}

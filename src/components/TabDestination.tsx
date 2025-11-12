@@ -1,8 +1,8 @@
-import { useState } from "react"
-import { Select, MenuItem, FormControl, InputLabel, Box, Typography, Button, Alert } from "@mui/material";
+import React, { useState } from "react"
+import { Select, MenuItem, FormControl, InputLabel, Box, Typography, Button, Alert, Link } from "@mui/material";
 import { ImportDataInterface } from "../helpers/ImportHelper";
 import { DataSourceType } from "../types";
-import { ApiHelper } from "@churchapps/apphelper";
+import UserContext from "../UserContext";
 import getB1Data from "../helpers/ImportHelpers/ImportB1DbHelper"
 import generateBreezeZip from "../helpers/ExportHelpers/ExportBreezeZipHelper"
 import generateB1Zip from "../helpers/ExportHelpers/ExportB1ZipHelper"
@@ -23,6 +23,7 @@ interface Props {
 }
 
 export const TabDestination = (props: Props) => {
+  const context = React.useContext(UserContext);
   const [b1Data, setB1Data] = useState<ImportDataInterface>();
   const [loginError, setLoginError] = useState<boolean>(false);
   let progress: any = {};
@@ -39,7 +40,7 @@ export const TabDestination = (props: Props) => {
 
   const handleSelect = (e: string) => {
     setLoginError(false);
-    if (e === DataSourceType.B1_DB && !ApiHelper.isAuthenticated) {
+    if (e === DataSourceType.B1_DB && !context?.user) {
       setLoginError(true);
       return;
     }
@@ -96,7 +97,11 @@ export const TabDestination = (props: Props) => {
 
       {loginError && (
         <Alert severity="error" sx={{ mb: 2, maxWidth: 500 }}>
-          You must be logged in to use B1 Database as a destination. Please log in first.
+          You must be logged in to use B1 Database as a destination. Please{' '}
+          <Link href="/login" sx={{ color: 'inherit', fontWeight: 'bold', textDecoration: 'underline' }}>
+            log in
+          </Link>{' '}
+          first.
         </Alert>
       )}
 
