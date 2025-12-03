@@ -50,7 +50,7 @@ export class EnvironmentHelper {
     EnvironmentHelper.MembershipApi = "https://membershipapi.staging.churchapps.org";
     EnvironmentHelper.ContentRoot = "https://content.staging.churchapps.org";
     EnvironmentHelper.GoogleAnalyticsTag = "";
-    EnvironmentHelper.B1Url = "https://app.staging.b1.org";*/
+    EnvironmentHelper.B1Url = "https://app.staging.b1.church";*/
   }
 
   //NOTE: None of these values are secret.
@@ -61,7 +61,7 @@ export class EnvironmentHelper {
     EnvironmentHelper.MembershipApi = "https://membershipapi.churchapps.org";
     EnvironmentHelper.ContentRoot = "https://content.churchapps.org";
     EnvironmentHelper.GoogleAnalyticsTag = "UA-164774603-4";
-    EnvironmentHelper.B1Url = "https://app.b1.org";*/
+    EnvironmentHelper.B1Url = "https://app.b1.church";*/
   }
 
 }

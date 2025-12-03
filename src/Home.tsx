@@ -49,7 +49,7 @@ export const Home = () => {
           <Button
             variant="outlined"
             size="small"
-            href="https://b1.org/"
+            href="https://b1.church/"
             sx={{
               color: '#FFF',
               borderColor: 'rgba(255,255,255,0.5)',
