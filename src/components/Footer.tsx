@@ -8,7 +8,7 @@ export const Footer: React.FC = () => (
     py: 5,
     textAlign: 'center'
   }}>
-    <img src="/images/logo-footer.png" alt="logo" style={{ maxWidth: 300, marginBottom: 20 }} />
+    <img src="/images/logo-footer.png?v=1" alt="logo" style={{ maxWidth: 300, marginBottom: 20 }} />
     <Typography variant="body2">
       Phone: 918-994-2638 | support@b1.church
     </Typography>
