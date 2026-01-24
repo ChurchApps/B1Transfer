@@ -18,7 +18,7 @@ export const Header: React.FC = () => {
       secondaryMenuItems={[]}
       secondaryMenuLabel={""}
       context={context}
-      appName={"B1Transfer"}
+      appName={"B1Admin"}
       onNavigate={handleNavigate}
     />
   );
