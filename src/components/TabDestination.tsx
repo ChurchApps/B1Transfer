@@ -46,17 +46,17 @@ export const TabDestination = (props: Props) => {
 
   const handleSelect = (e: string) => {
     setLoginError(false);
+    setExportError(null);
     if (e === DataSourceType.B1_DB && !context?.user) {
       setLoginError(true);
       return;
     }
+    props.setDataExportSource(e);
     if (e === DataSourceType.B1_DB) {
-      props.setDataExportSource(e);
       getB1DBData();
       props.setShowFinalCount(true);
     } else {
       props.setShowFinalCount(false);
-      handleExport(e);
     }
   };
 
@@ -86,10 +86,11 @@ export const TabDestination = (props: Props) => {
     };
   };
 
+  const isFileDestination = (type: string) => type !== DataSourceType.B1_DB;
+
   const handleExport = async (e: string) => {
-    props.setDataExportSource(e);
     setExportError(null);
-    if (e === props.dataImportSource) {
+    if (e === props.dataImportSource && !isFileDestination(e)) {
       setExportError("Export source must be different than import source to avoid duplication of data.");
       return;
     } else {
@@ -201,6 +202,19 @@ export const TabDestination = (props: Props) => {
           <MenuItem value={DataSourceType.CCB_CSV}>CCB / Pushpay Export Zip</MenuItem>
         </Select>
       </FormControl>
+
+      {props.dataExportSource && isFileDestination(props.dataExportSource) && (
+        <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end", maxWidth: 300 }}>
+          <Button
+            variant="contained"
+            color="success"
+            onClick={() => handleExport(props.dataExportSource)}
+            sx={{ textTransform: "none", borderRadius: 2, fontWeight: 600, px: 4 }}
+          >
+            Start Export
+          </Button>
+        </Box>
+      )}
 
       {props.showFinalCount && props.importData && b1Data && (
         <Box sx={{ mt: 3 }}>
