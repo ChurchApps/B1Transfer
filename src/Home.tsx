@@ -10,6 +10,17 @@ import { TabSource } from "./components/TabSource";
 import { TabPreview } from "./components/TabPreview";
 import { TabDestination } from "./components/TabDestination";
 import { TabRun } from "./components/TabRun";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+
+export interface ExportCategoriesInterface {
+  people: boolean;
+  groups: boolean;
+  attendance: boolean;
+  donations: boolean;
+  forms: boolean;
+}
+
+const defaultCategories: ExportCategoriesInterface = { people: true, groups: true, attendance: true, donations: true, forms: true };
 
 export const Home = () => {
   const [dataImportSource, setDataImportSource] = useState<string | null>(null);
@@ -18,10 +29,11 @@ export const Home = () => {
   const [importData, setImportData] = useState<ImportDataInterface | null>(null);
   const [isExporting, setIsExporting] = useState(false);
 
-  const [status, setStatus] = useState<any>({});
+  const [status, setStatus] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState<string>("step1");
 
   const [showFinalCount, setShowFinalCount] = useState<boolean>(false);
+  const [exportCategories, setExportCategories] = useState<ExportCategoriesInterface>({ ...defaultCategories });
 
   const isLoadingSourceData = dataImportSource && !importData;
 
@@ -33,6 +45,7 @@ export const Home = () => {
     setIsExporting(false);
     setStatus({});
     setShowFinalCount(false);
+    setExportCategories({ ...defaultCategories });
   };
 
 
@@ -80,8 +93,8 @@ export const Home = () => {
                 If you're just getting started you can also use this tool to import existing data into B1.
               </Typography>
               <Typography variant="body1" sx={{ color: "text.secondary" }}>
-                We support three different data formats: the B1 export file format, along with Breeze and Planning Center file formats.
-                You can use this tool to convert between any of these three in addition to reading/writing to your hosted B1 database.
+                We support B1, Breeze, and Planning Center file formats, plus custom CSV/Excel files with field mapping.
+                You can convert between any of these formats or read/write directly to your hosted B1 database.
               </Typography>
             </CardContent>
           </Card>
@@ -121,28 +134,32 @@ export const Home = () => {
               bgcolor: "background.paper",
               minHeight: 400
             }}>
-              {activeTab === "step1" && (
-                <TabSource importData={importData} isLoadingSourceData={isLoadingSourceData} setActiveTab={setActiveTab} dataImportSource={dataImportSource} setDataImportSource={setDataImportSource} setImportData={setImportData} />
-              )}
-              {activeTab === "step2" && (
-                <TabPreview importData={importData} isLoadingSourceData={isLoadingSourceData} setActiveTab={setActiveTab} dataImportSource={dataImportSource} />
-              )}
-              {activeTab === "step3" && (
-                <TabDestination
-                  importData={importData}
-                  setActiveTab={setActiveTab}
-                  dataImportSource={dataImportSource}
-                  dataExportSource={dataExportSource}
-                  setDataExportSource={setDataExportSource}
-                  setIsExporting={setIsExporting}
-                  setStatus={setStatus}
-                  showFinalCount={showFinalCount}
-                  setShowFinalCount={setShowFinalCount}
-                />
-              )}
-              {activeTab === "step4" && (
-                <TabRun dataExportSource={dataExportSource} isExporting={isExporting} status={status} />
-              )}
+              <ErrorBoundary>
+                {activeTab === "step1" && (
+                  <TabSource importData={importData} isLoadingSourceData={isLoadingSourceData} setActiveTab={setActiveTab} dataImportSource={dataImportSource} setDataImportSource={setDataImportSource} setImportData={setImportData} />
+                )}
+                {activeTab === "step2" && (
+                  <TabPreview importData={importData} isLoadingSourceData={isLoadingSourceData} setActiveTab={setActiveTab} dataImportSource={dataImportSource} />
+                )}
+                {activeTab === "step3" && (
+                  <TabDestination
+                    importData={importData}
+                    setActiveTab={setActiveTab}
+                    dataImportSource={dataImportSource}
+                    dataExportSource={dataExportSource}
+                    setDataExportSource={setDataExportSource}
+                    setIsExporting={setIsExporting}
+                    setStatus={setStatus}
+                    showFinalCount={showFinalCount}
+                    setShowFinalCount={setShowFinalCount}
+                    exportCategories={exportCategories}
+                    setExportCategories={setExportCategories}
+                  />
+                )}
+                {activeTab === "step4" && (
+                  <TabRun dataExportSource={dataExportSource} isExporting={isExporting} status={status} />
+                )}
+              </ErrorBoundary>
             </Box>
           </Card>
 

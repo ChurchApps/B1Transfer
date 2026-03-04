@@ -157,6 +157,7 @@
 		"forgot": "Forgot Password",
 		"goLogin": "Go to Login",
 		"login": "Login",
+		"noAcc": "Don't have an account?",
 		"password": "Password",
 		"register": "Register",
 		"registerThankYou": "Thank you for registering! Please check your email to verify your account.",
@@ -262,6 +263,9 @@
 	"wrapper": {
 		"chatWith": "Chat with",
 		"deleteChurch": "Delete",
+		"editAccount": "Edit Account",
+		"editChurchProfile": "Edit Church Profile",
+		"editProfile": "Edit Profile",
 		"logout": "Logout",
 		"messages": "Messages",
 		"newPrivateMessage": "New Private Message",

@@ -12,59 +12,58 @@ import {
 import JSZip from "jszip";
 import { ContactInfoInterface, NameInterface } from "..";
 
-const people: ImportPersonInterface[] = [];
-const households: ImportHouseholdInterface[] = [];
-const campuses: ImportCampusInterface[] = [];
-const services: ImportServiceInterface[] = [];
-const serviceTimes: ImportServiceTimeInterface[] = [];
-const groupServiceTimes: ImportGroupServiceTimeInterface[] = [];
-const groups: ImportGroupInterface[] = [];
-const groupMembers: ImportGroupMemberInterface[] = [];
-const sessions: ImportSessionInterface[] = [];
-const visits: ImportVisitInterface[] = [];
-const visitSessions: ImportVisitSessionInterface[] = [];
-const batches: ImportDonationBatchInterface[] = [];
-const funds: ImportFundInterface[] = [];
-const donations: ImportDonationInterface[] = [];
-const fundDonations:ImportFundDonationInterface[] = [];
-const forms: ImportFormsInterface[] = [];
-const questions: ImportQuestionsInterface[] = [];
-const formSubmissions: ImportFormSubmissions[] = [];
-const answers:ImportAnswerInterface[] = [];
-
 const readPlanningCenterZip = async (file: File): Promise<ImportDataInterface> => {
+  const people: ImportPersonInterface[] = [];
+  const households: ImportHouseholdInterface[] = [];
+  const campuses: ImportCampusInterface[] = [];
+  const services: ImportServiceInterface[] = [];
+  const serviceTimes: ImportServiceTimeInterface[] = [];
+  const groupServiceTimes: ImportGroupServiceTimeInterface[] = [];
+  const groups: ImportGroupInterface[] = [];
+  const groupMembers: ImportGroupMemberInterface[] = [];
+  const sessions: ImportSessionInterface[] = [];
+  const visits: ImportVisitInterface[] = [];
+  const visitSessions: ImportVisitSessionInterface[] = [];
+  const batches: ImportDonationBatchInterface[] = [];
+  const funds: ImportFundInterface[] = [];
+  const donations: ImportDonationInterface[] = [];
+  const fundDonations: ImportFundDonationInterface[] = [];
+  const forms: ImportFormsInterface[] = [];
+  const questions: ImportQuestionsInterface[] = [];
+  const formSubmissions: ImportFormSubmissions[] = [];
+  const answers: ImportAnswerInterface[] = [];
+
   const fileExt = file.name.split(".").pop();
   const isZip = fileExt === "zip";
   const zip = isZip ? await JSZip.loadAsync(file) : null;
   const fileNames = isZip ? Object.keys(zip.files) : [];
   const peopleFile = isZip ? fileNames.find(name => name.match("export")) : file.name;
   const csvString = isZip ? await zip.file(peopleFile).async("string") : Papa.unparse(await UploadHelper.readCsv(file) as Object[]);
-  loadPeople(UploadHelper.readCsvString(csvString));
+  loadPeople(UploadHelper.readCsvString(csvString), people, households);
   return {
-    people: people,
-    households: households,
-    campuses: campuses,
-    services: services,
-    serviceTimes: serviceTimes,
-    groupServiceTimes: groupServiceTimes,
-    groups: groups,
-    groupMembers: groupMembers,
-    visits: visits,
-    sessions: sessions,
-    visitSessions: visitSessions,
-    batches: batches,
-    donations: donations,
-    funds: funds,
-    fundDonations: fundDonations,
-    forms: forms,
-    questions: questions,
-    formSubmissions: formSubmissions,
-    answers: answers
+    people,
+    households,
+    campuses,
+    services,
+    serviceTimes,
+    groupServiceTimes,
+    groups,
+    groupMembers,
+    visits,
+    sessions,
+    visitSessions,
+    batches,
+    donations,
+    funds,
+    fundDonations,
+    forms,
+    questions,
+    formSubmissions,
+    answers
   } as ImportDataInterface;
-
 };
 
-const loadPeople = (data: any) => {
+const loadPeople = (data: any, people: ImportPersonInterface[], households: ImportHouseholdInterface[]) => {
   for (let i = 0; i < data.length; i++) {
     if (data[i]["Last Name"] !== undefined) {
       const p = {
@@ -95,7 +94,6 @@ const loadPeople = (data: any) => {
       people.push(p);
     }
   }
-  return people;
 };
 
 const assignHousehold = (households: ImportHouseholdInterface[], person: any) => {

@@ -11,67 +11,61 @@ import {
 import JSZip from "jszip";
 import { ContactInfoInterface, NameInterface } from "..";
 
-let people: ImportPersonInterface[] = [];
-let households: ImportHouseholdInterface[] = [];
-const campuses: ImportCampusInterface[] = [];
-const services: ImportServiceInterface[] = [];
-const serviceTimes: ImportServiceTimeInterface[] = [];
-const groupServiceTimes: ImportGroupServiceTimeInterface[] = [];
-let groups: ImportGroupInterface[] = [];
-let groupMembers: ImportGroupMemberInterface[] = [];
-const sessions: ImportSessionInterface[] = [];
-const visits: ImportVisitInterface[] = [];
-const visitSessions: ImportVisitSessionInterface[] = [];
-let batches: ImportDonationBatchInterface[] = [];
-let funds: ImportFundInterface[] = [];
-let donations: ImportDonationInterface[] = [];
-let fundDonations: ImportFundDonationInterface[] = [];
-const forms: ImportFormsInterface[] = [];
-const questions: ImportQuestionsInterface[] = [];
-const formSubmissions: ImportFormSubmissions[] = [];
-const answers: ImportAnswerInterface[] = [];
-
 const readBreezeZip = async (file: File): Promise<ImportDataInterface> => {
+  const people: ImportPersonInterface[] = [];
+  const households: ImportHouseholdInterface[] = [];
+  const campuses: ImportCampusInterface[] = [];
+  const services: ImportServiceInterface[] = [];
+  const serviceTimes: ImportServiceTimeInterface[] = [];
+  const groupServiceTimes: ImportGroupServiceTimeInterface[] = [];
+  const groups: ImportGroupInterface[] = [];
+  const groupMembers: ImportGroupMemberInterface[] = [];
+  const sessions: ImportSessionInterface[] = [];
+  const visits: ImportVisitInterface[] = [];
+  const visitSessions: ImportVisitSessionInterface[] = [];
+  const batches: ImportDonationBatchInterface[] = [];
+  const funds: ImportFundInterface[] = [];
+  const donations: ImportDonationInterface[] = [];
+  const fundDonations: ImportFundDonationInterface[] = [];
+  const forms: ImportFormsInterface[] = [];
+  const questions: ImportQuestionsInterface[] = [];
+  const formSubmissions: ImportFormSubmissions[] = [];
+  const answers: ImportAnswerInterface[] = [];
+
   const zip = await JSZip.loadAsync(file);
   const fileNames = Object.keys(zip.files);
   const peopleFile = fileNames.find(name => name.match("people"));
   const tagsFile = fileNames.find(name => name.match("tags"));
-  //const notesFile = fileNames.find(name => name.match("notes"))
   const givingFile = fileNames.find(name => name.match("giving"));
-  //const eventsFile = fileNames.find(name => name.match("events"))
 
-  loadPeople(UploadHelper.readXlsx(await zip.file(peopleFile).async("arraybuffer")));
-  //loadNotes(UploadHelper.readXlsx(await zip.file(notesFile).async("arraybuffer")));
-  loadGroups(UploadHelper.readXlsx(await zip.file(tagsFile).async("arraybuffer")));
-  loadDonations(UploadHelper.readXlsx(await zip.file(givingFile).async("arraybuffer")));
+  loadPeople(UploadHelper.readXlsx(await zip.file(peopleFile).async("arraybuffer")), people, households);
+  loadGroups(UploadHelper.readXlsx(await zip.file(tagsFile).async("arraybuffer")), groups, groupMembers);
+  loadDonations(UploadHelper.readXlsx(await zip.file(givingFile).async("arraybuffer")), people, batches, funds, donations, fundDonations);
 
   return {
-    people: people,
-    households: households,
-    campuses: campuses,
-    services: services,
-    serviceTimes: serviceTimes,
-    groupServiceTimes: groupServiceTimes,
-    groups: groups,
-    groupMembers: groupMembers,
-    visits: visits,
-    sessions: sessions,
-    visitSessions: visitSessions,
-    batches: batches,
-    donations: donations,
-    funds: funds,
-    fundDonations: fundDonations,
-    forms: forms,
-    questions: questions,
-    formSubmissions: formSubmissions,
-    answers: answers
+    people,
+    households,
+    campuses,
+    services,
+    serviceTimes,
+    groupServiceTimes,
+    groups,
+    groupMembers,
+    visits,
+    sessions,
+    visitSessions,
+    batches,
+    donations,
+    funds,
+    fundDonations,
+    forms,
+    questions,
+    formSubmissions,
+    answers
   } as ImportDataInterface;
-
 };
 
-const loadGroups = (data: any) => {
-  groups = [];
-  groupMembers = [];
+const loadGroups = (data: any, groups: ImportGroupInterface[], groupMembers: ImportGroupMemberInterface[]) => {
   const xlsGroups = Object.keys(data);
   xlsGroups.forEach((groupName, i) => {
     getOrCreateGroup(groups, { importKey: i.toString(), serviceTimeKey: null, startDate: null, endDate: null, name: groupName } as ImportGroupInterface);
@@ -81,7 +75,6 @@ const loadGroups = (data: any) => {
       groupMembers.push(groupMember);
     });
   });
-  return groups;
 };
 
 const getOrCreateGroup = (groups: ImportGroupInterface[], data: ImportGroupInterface) => {
@@ -97,11 +90,7 @@ const getOrCreateGroup = (groups: ImportGroupInterface[], data: ImportGroupInter
   return result;
 };
 
-const loadDonations = (data: any) => {
-  batches = [];
-  donations = [];
-  funds = [];
-  fundDonations = [];
+const loadDonations = (data: any, people: ImportPersonInterface[], batches: ImportDonationBatchInterface[], funds: ImportFundInterface[], donations: ImportDonationInterface[], fundDonations: ImportFundDonationInterface[]) => {
   for (let i = 0; i < data["Total Contributions"].length; i++) {
     const d = data["Total Contributions"][i];
     if (d.Amount !== undefined) {
@@ -124,9 +113,7 @@ const assignHousehold = (households: ImportHouseholdInterface[], person: ImportP
   person.householdKey = households[households.length - 1].importKey;
 };
 
-const loadPeople = (data: any) => {
-  people = [];
-  households = [];
+const loadPeople = (data: any, people: ImportPersonInterface[], households: ImportHouseholdInterface[]) => {
   const xlssheets = Object.keys(data);
   xlssheets.forEach(sheet => {
     for (let i = 0; i < data[sheet].length; i++) {
@@ -149,7 +136,6 @@ const loadPeople = (data: any) => {
       }
     }
   });
-  return people;
 };
 
 export default readBreezeZip;

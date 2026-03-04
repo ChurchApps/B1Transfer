@@ -10,6 +10,7 @@ import {
 import { ApiHelper } from "..";
 
 const BATCH_SIZE = 1000;
+const MAX_RETRIES = 3;
 
 const postInBatches = async <T extends { id?: string }>(
   endpoint: string,
@@ -29,7 +30,16 @@ const postInBatches = async <T extends { id?: string }>(
       progressCallback(currentBatch, totalBatches, isLastBatch);
     }
 
-    const batchResults = await ApiHelper.post(endpoint, batch, apiName);
+    let batchResults: any[] | null = null;
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        batchResults = await ApiHelper.post(endpoint, batch, apiName);
+        break;
+      } catch (e) {
+        if (attempt === MAX_RETRIES) throw e;
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      }
+    }
 
     // Map the results back to the original items
     for (let j = 0; j < batchResults.length; j++) {
@@ -111,11 +121,11 @@ const exportPeople = async (exportData: ImportDataInterface, runImport: (keyName
         p.householdId = ImportHelper.getByImportKey(tmpHouseholds, p.householdKey).id;
         p.householdRole = "Other";
       });
-      await postInBatches("/people", tmpPeople, "MembershipApi", (_current, _total, isComplete) => {
+      await postInBatches("/people", tmpPeople, "MembershipApi", (current, total, isComplete) => {
         if (isComplete) {
           updateProgress("People", "complete");
         } else {
-          updateProgress("People", "running");
+          updateProgress("People", `running (batch ${current}/${total})`);
         }
       });
     } else {
@@ -163,11 +173,11 @@ const exportGroups = async (
         gm.groupId = ImportHelper.getByImportKey(tmpGroups, gm.groupKey)?.id;
         gm.personId = ImportHelper.getByImportKey(tmpPeople, gm.personKey)?.id;
       });
-      await postInBatches("/groupmembers", tmpMembers, "MembershipApi", (_current, _total, isComplete) => {
+      await postInBatches("/groupmembers", tmpMembers, "MembershipApi", (current, total, isComplete) => {
         if (isComplete) {
           updateProgress("Group Members", "complete");
         } else {
-          updateProgress("Group Members", "running");
+          updateProgress("Group Members", `running (batch ${current}/${total})`);
         }
       });
     } else {
@@ -256,12 +266,8 @@ const exportDonations = async (exportData: ImportDataInterface, tmpPeople: Impor
         d.personId = ImportHelper.getByImportKey(tmpPeople, d.personKey)?.id;
       });
 
-      await postInBatches("/donations", tmpDonations, "GivingApi", (_current, _total, isComplete) => {
-        if (isComplete) {
-          updateProgress("Donations", "running");
-        } else {
-          updateProgress("Donations", "running");
-        }
+      await postInBatches("/donations", tmpDonations, "GivingApi", (current, total) => {
+        updateProgress("Donations", `running (batch ${current}/${total})`);
       });
     } else {
       updateProgress("Donations", "running");
@@ -275,11 +281,11 @@ const exportDonations = async (exportData: ImportDataInterface, tmpPeople: Impor
         fd.donationId = ImportHelper.getByImportKey(tmpDonations, fd.donationKey).id;
         fd.fundId = ImportHelper.getByImportKey(tmpFunds, fd.fundKey).id;
       });
-      await postInBatches("/funddonations", tmpFundDonations, "GivingApi", (_current, _total, isComplete) => {
+      await postInBatches("/funddonations", tmpFundDonations, "GivingApi", (current, total, isComplete) => {
         if (isComplete) {
           updateProgress("Donations", "complete");
         } else {
-          updateProgress("Donation Funds", "running");
+          updateProgress("Donations", `running (fund donations batch ${current}/${total})`);
         }
       });
     } else {
@@ -317,7 +323,7 @@ const exportAttendance = async (
           v.groupId = ImportHelper.getByImportKey(tmpGroups, v.groupKey).id;
         }
       });
-      await postInBatches("/visits", tmpVisits, "AttendanceApi", (_current, _total, isComplete) => {
+      await postInBatches("/visits", tmpVisits, "AttendanceApi", (current, total, isComplete) => {
         if (isComplete) {
           if (exportData.visitSessions.length > 0) {
             updateProgress("Attendance", "running");
@@ -325,7 +331,7 @@ const exportAttendance = async (
             updateProgress("Attendance", "complete");
           }
         } else {
-          updateProgress("Attendance", "running");
+          updateProgress("Attendance", `running (visits batch ${current}/${total})`);
         }
       });
     }
@@ -336,11 +342,11 @@ const exportAttendance = async (
         vs.visitId = ImportHelper.getByImportKey(tmpVisits, vs.visitKey).id;
         vs.sessionId = ImportHelper.getByImportKey(tmpSessions, vs.sessionKey).id;
       });
-      await postInBatches("/visitsessions", tmpVisitSessions, "AttendanceApi", (_current, _total, isComplete) => {
+      await postInBatches("/visitsessions", tmpVisitSessions, "AttendanceApi", (current, total, isComplete) => {
         if (isComplete) {
           updateProgress("Attendance", "complete");
         } else {
-          updateProgress("Attendance", "running");
+          updateProgress("Attendance", `running (visit sessions batch ${current}/${total})`);
         }
       });
     } else if (tmpVisits.length === 0 && tmpSessions.length === 0) {

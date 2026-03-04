@@ -1,5 +1,6 @@
 import React, { useMemo, useCallback } from "react";
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tabs, Tab, Alert, Box, Typography } from "@mui/material";
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tabs, Tab, Alert, Box, Typography, Chip, Stack } from "@mui/material";
+import { Warning } from "@mui/icons-material";
 import { ImportHelper, DateHelper, CurrencyHelper } from ".";
 import { ImportGroupInterface, ImportPersonInterface, ImportDonationBatchInterface, ImportFundInterface, ImportDataInterface } from "../helpers/ImportHelper";
 
@@ -264,6 +265,33 @@ export const ImportPreview: React.FC<Props> = React.memo((props) => {
     );
   }, [props.importData.forms]);
 
+  const validationWarnings = useMemo(() => {
+    const warnings: string[] = [];
+    const people = props.importData.people;
+
+    const missingEmail = people.filter(p => !p.contactInfo?.email).length;
+    if (missingEmail > 0) warnings.push(`${missingEmail} people missing email`);
+
+    const missingPhone = people.filter(p => !p.contactInfo?.mobilePhone && !p.contactInfo?.homePhone).length;
+    if (missingPhone > 0) warnings.push(`${missingPhone} people missing phone number`);
+
+    const missingFirst = people.filter(p => !p.name?.first).length;
+    if (missingFirst > 0) warnings.push(`${missingFirst} people missing first name`);
+
+    const nameMap = new Map<string, number>();
+    people.forEach(p => {
+      const key = `${(p.name?.first || "").toLowerCase()} ${(p.name?.last || "").toLowerCase()}`.trim();
+      if (key) nameMap.set(key, (nameMap.get(key) || 0) + 1);
+    });
+    const dupeCount = Array.from(nameMap.values()).filter(c => c > 1).reduce((sum, c) => sum + c, 0);
+    if (dupeCount > 0) warnings.push(`${dupeCount} potential duplicate people (same first + last name)`);
+
+    const orphanMembers = props.importData.groupMembers.filter(gm => !people.find(p => p.importKey === gm.personKey)).length;
+    if (orphanMembers > 0) warnings.push(`${orphanMembers} group members with no matching person`);
+
+    return warnings;
+  }, [props.importData.people, props.importData.groupMembers]);
+
   if (props.importData.people.length === 0) {
     return (
       <Alert severity="info">
@@ -273,6 +301,17 @@ export const ImportPreview: React.FC<Props> = React.memo((props) => {
   } else {
     return (
       <Box>
+        {validationWarnings.length > 0 && (
+          <Alert severity="warning" icon={<Warning />} sx={{ mb: 2 }}>
+            <Typography variant="subtitle2" sx={{ mb: 0.5 }}>Data Quality Warnings</Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              {validationWarnings.map((w, i) => (
+                <Chip key={i} label={w} size="small" color="warning" variant="outlined" />
+              ))}
+            </Stack>
+          </Alert>
+        )}
+
         {/* Tab Navigation */}
         <Box sx={{
           borderBottom: 1,
