@@ -8,6 +8,8 @@ import generateBreezeZip from "../helpers/ExportHelpers/ExportBreezeZipHelper";
 import generateB1Zip from "../helpers/ExportHelpers/ExportB1ZipHelper";
 import exportToB1Db from "../helpers/ExportHelpers/ExportB1DbHelper";
 import generatePlanningCenterZip from "../helpers/ExportHelpers/ExportPlanningCenterZipHelper";
+import generateTithelyZip from "../helpers/ExportHelpers/ExportTithelyHelper";
+import generateCCBZip from "../helpers/ExportHelpers/ExportCCBHelper";
 import { FinalCountPreview } from "./FinalCountPreview";
 import { ExportCategoriesInterface } from "../Home";
 
@@ -112,6 +114,14 @@ export const TabDestination = (props: Props) => {
             generatePlanningCenterZip(exportData, setProgress);
             break;
           }
+          case DataSourceType.TITHELY_CSV: {
+            generateTithelyZip(exportData, setProgress);
+            break;
+          }
+          case DataSourceType.CCB_CSV: {
+            generateCCBZip(exportData, setProgress);
+            break;
+          }
           default: {
             break;
           }
@@ -187,6 +197,8 @@ export const TabDestination = (props: Props) => {
           <MenuItem value={DataSourceType.B1_ZIP}>B1 Export Zip</MenuItem>
           <MenuItem value={DataSourceType.BREEZE_ZIP}>Breeze Export Zip</MenuItem>
           <MenuItem value={DataSourceType.PLANNING_CENTER_ZIP}>Planning Center zip</MenuItem>
+          <MenuItem value={DataSourceType.TITHELY_CSV}>Tithe.ly Export Zip</MenuItem>
+          <MenuItem value={DataSourceType.CCB_CSV}>CCB / Pushpay Export Zip</MenuItem>
         </Select>
       </FormControl>
 

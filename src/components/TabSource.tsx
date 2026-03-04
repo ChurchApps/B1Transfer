@@ -9,6 +9,8 @@ import getB1Data from "../helpers/ImportHelpers/ImportB1DbHelper";
 import readBreezeZip from "../helpers/ImportHelpers/ImportBreezeZipHelper";
 import readPlanningCenterZip from "../helpers/ImportHelpers/ImportPlanningCenterZipHelper";
 import readCustomCsv from "../helpers/ImportHelpers/ImportCustomCsvHelper";
+import readTithelyCsv from "../helpers/ImportHelpers/ImportTithelyHelper";
+import readCCBCsv from "../helpers/ImportHelpers/ImportCCBHelper";
 import { UploadHelper } from "../helpers/UploadHelper";
 import { FieldMappingUI } from "./FieldMapping";
 import Papa from "papaparse";
@@ -41,7 +43,9 @@ export const TabSource = (props: Props) => {
     { label: "B1 zip", value: DataSourceType.B1_ZIP },
     { label: "Breeze zip", value: DataSourceType.BREEZE_ZIP },
     { label: "Planning center zip", value: DataSourceType.PLANNING_CENTER_ZIP },
-    { label: "Custom CSV/XLSX", value: DataSourceType.CUSTOM_CSV }
+    { label: "Custom CSV/XLSX", value: DataSourceType.CUSTOM_CSV },
+    { label: "Tithe.ly CSV", value: DataSourceType.TITHELY_CSV },
+    { label: "CCB/Pushpay CSV", value: DataSourceType.CCB_CSV }
   ];
 
   const processFile = useCallback(async (file: File) => {
@@ -96,6 +100,14 @@ export const TabSource = (props: Props) => {
         }
         case DataSourceType.PLANNING_CENTER_ZIP: {
           importData = await readPlanningCenterZip(file);
+          break;
+        }
+        case DataSourceType.TITHELY_CSV: {
+          importData = await readTithelyCsv(file);
+          break;
+        }
+        case DataSourceType.CCB_CSV: {
+          importData = await readCCBCsv(file);
           break;
         }
         default: {
@@ -215,6 +227,8 @@ export const TabSource = (props: Props) => {
           <MenuItem value={DataSourceType.BREEZE_ZIP}>Breeze Import Zip</MenuItem>
           <MenuItem value={DataSourceType.PLANNING_CENTER_ZIP}>Planning Center zip</MenuItem>
           <MenuItem value={DataSourceType.CUSTOM_CSV}>Custom CSV / Excel</MenuItem>
+          <MenuItem value={DataSourceType.TITHELY_CSV}>Tithe.ly CSV</MenuItem>
+          <MenuItem value={DataSourceType.CCB_CSV}>CCB / Pushpay CSV</MenuItem>
         </Select>
       </FormControl>
 

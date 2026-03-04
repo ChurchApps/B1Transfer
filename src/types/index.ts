@@ -3,7 +3,9 @@ export enum DataSourceType {
     B1_ZIP = "b1Zip",
     BREEZE_ZIP = "breezeZip",
     PLANNING_CENTER_ZIP = "planingCenterZip",
-    CUSTOM_CSV = "customCsv"
+    CUSTOM_CSV = "customCsv",
+    TITHELY_CSV = "tithelyCsv",
+    CCB_CSV = "ccbCsv"
   }
 
 export interface FieldMapping {
