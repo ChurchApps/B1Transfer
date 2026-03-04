@@ -196,8 +196,9 @@ const loadPeople = (data: any, zip: any) => {
   for (let i = 0; i < data.length; i++) {
     if (data[i].lastName !== undefined) {
       const p = data[i] as ImportPersonInterface;
-      p.name = { first: data[i].firstName ?? "", last: data[i].lastName ?? "", middle: data[i].middleName ?? "", nick: data[i].nickName ?? "", display: data[i].displayName ?? "" };
-      p.contactInfo = { address1: data[i].address1 ?? "", address2: data[i].address2 ?? "", city: data[i].city ?? "", state: data[i].state ?? "", zip: data[i].zip ?? "", homePhone: data[i].homePhone ?? "", workPhone: data[i].workPhone ?? "", email: data[i].email ?? "" };
+      p.name = { first: data[i].firstName ?? "", last: data[i].lastName ?? "", middle: data[i].middleName ?? "", nick: data[i].nickName ?? "", display: data[i].displayName ?? "", title: data[i].prefix ?? "", suffix: data[i].suffix ?? "" };
+      p.contactInfo = { address1: data[i].address1 ?? "", address2: data[i].address2 ?? "", city: data[i].city ?? "", state: data[i].state ?? "", zip: data[i].zip ?? "", homePhone: data[i].homePhone ?? "", mobilePhone: data[i].mobilePhone ?? "", workPhone: data[i].workPhone ?? "", email: data[i].email ?? "" };
+      if (data[i].householdRole) p.householdRole = data[i].householdRole;
       assignHousehold(households, data[i]);
       if (p.photo !== undefined) {
         zip?.file(p.photo)?.async("base64").then((data: any) => {
@@ -213,7 +214,7 @@ const loadPeople = (data: any, zip: any) => {
 };
 
 const assignHousehold = (households: ImportHouseholdInterface[], person: any) => {
-  const householdName: string = person.householdName;
+  const householdName: string = person.householdName || person.household;
   if (households.length === 0 || households[households.length - 1].name !== householdName) {
     households.push({ name: householdName, importKey: (households.length + 1).toString() } as ImportHouseholdInterface);
   }

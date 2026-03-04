@@ -98,11 +98,15 @@ const exportPeople = async (importData: ImportDataInterface, runImport: (keyName
       const household = tmpHouseholds.find(h => p.householdKey === h.importKey);
       const row = {
         importKey: p.importKey,
-        household: household.name ?? p.name.last,
+        householdName: household.name ?? p.name.last,
+        householdRole: p.householdRole ?? "",
+        displayName: p.name.display ?? "",
         lastName: p.name.last,
         firstName: p.name.first,
         middleName: p.name.middle,
         nickName: p.name.nick,
+        prefix: p.name.title ?? "",
+        suffix: p.name.suffix ?? "",
         birthDate: p.birthDate,
         gender: p.gender,
         maritalStatus: p.maritalStatus,
