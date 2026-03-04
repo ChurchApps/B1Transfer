@@ -1,0 +1,7 @@
+{
+  "common": {
+    "loading": "Laddar...",
+    "error": "Fel",
+    "success": "Klart"
+  }
+}
