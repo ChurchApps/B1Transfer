@@ -56,10 +56,25 @@ const readCCBCsv = async (file: File): Promise<ImportDataInterface> => {
   }
 
   return {
-    people, households, campuses, services, serviceTimes, groupServiceTimes,
-    groups, groupMembers, visits, sessions, visitSessions,
-    batches, donations, funds, fundDonations,
-    forms, questions, formSubmissions, answers
+    people,
+    households,
+    campuses,
+    services,
+    serviceTimes,
+    groupServiceTimes,
+    groups,
+    groupMembers,
+    visits,
+    sessions,
+    visitSessions,
+    batches,
+    donations,
+    funds,
+    fundDonations,
+    forms,
+    questions,
+    formSubmissions,
+    answers
   } as ImportDataInterface;
 };
 

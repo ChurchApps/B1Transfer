@@ -59,12 +59,7 @@ const exportCampuses = async (importData: ImportDataInterface, runImport: (keyNa
     serviceTimes.forEach((st) => {
       const service: ImportServiceInterface = ImportHelper.getById(services, st.serviceId);
       const campus: ImportCampusInterface = ImportHelper.getById(campuses, service.campusId);
-      const row = {
-        importKey: st.id,
-        campus: campus.name,
-        service: service.name,
-        time: st.name
-      };
+      const row = { importKey: st.id, campus: campus.name, service: service.name, time: st.name };
       data.push(row);
     });
   });
@@ -138,13 +133,7 @@ const exportGroups = async (importData: ImportDataInterface, runImport: (keyName
       if (gst.length === 0) serviceTimeIds = [""];
       else gst.forEach((time) => { serviceTimeIds.push(time.serviceTimeId.toString()); });
       serviceTimeIds.forEach((serviceTimeId) => {
-        const row = {
-          importKey: g.id,
-          serviceTimeKey: serviceTimeId,
-          categoryName: g.categoryName,
-          name: g.name,
-          trackAttendance: g.trackAttendance ? "TRUE" : "FALSE"
-        };
+        const row = { importKey: g.id, serviceTimeKey: serviceTimeId, categoryName: g.categoryName, name: g.name, trackAttendance: g.trackAttendance ? "TRUE" : "FALSE" };
         data.push(row);
       });
     });
@@ -195,12 +184,7 @@ const exportAttendance = async (importData: ImportDataInterface, runImport: (key
       const visit: ImportVisitInterface = ImportHelper.getById(visits, vs.visitId);
       const session: ImportSessionInterface = ImportHelper.getById(sessions, vs.sessionId);
       if (visit && session) {
-        const row = {
-          date: visit.visitDate,
-          serviceTimeKey: session.serviceTimeId,
-          groupKey: session.groupId,
-          personKey: visit.personId
-        };
+        const row = { date: visit.visitDate, serviceTimeKey: session.serviceTimeId, groupKey: session.groupId, personKey: visit.personId };
         data.push(row);
       }
     });
@@ -213,11 +197,7 @@ const exportForms = async (importData: ImportDataInterface, runImport: (keyName:
   const data: any[] = [];
   await runImport("Forms", async () => {
     forms.forEach((f) => {
-      const row = {
-        importKey: f.id,
-        name: f.name,
-        contentType: f.contentType
-      };
+      const row = { importKey: f.id, name: f.name, contentType: f.contentType };
       data.push(row);
     });
   });
@@ -228,12 +208,7 @@ const exportQuestions = async (importData: ImportDataInterface, runImport: (keyN
   const data: any[] = [];
   await runImport("Questions", async () => {
     questions.forEach(q => {
-      const row = {
-        questionKey: q.id,
-        formKey: q.formId,
-        fieldType: q.fieldType,
-        title: q.title
-      };
+      const row = { questionKey: q.id, formKey: q.formId, fieldType: q.fieldType, title: q.title };
       data.push(row);
     });
   });
@@ -244,11 +219,7 @@ const exportAnswers = async (importData: ImportDataInterface, runImport: (keyNam
   const data: any[] = [];
   await runImport("Answers", async () => {
     answers.forEach(a => {
-      const row = {
-        questionKey: a.questionId,
-        formSubmissionKey: a.formSubmissionId,
-        value: a.value
-      };
+      const row = { questionKey: a.questionId, formSubmissionKey: a.formSubmissionId, value: a.value };
       data.push(row);
     });
   });
@@ -259,11 +230,7 @@ const exportFormSubmissions = async (importData: ImportDataInterface, runImport:
   const data: any[] = [];
   await runImport("Form Submissions", async () => {
     formSubmissions.forEach(fs => {
-      const row = {
-        formKey: fs.formId,
-        personKey: fs.contentId,
-        contentType: fs.contentType
-      };
+      const row = { formKey: fs.formId, personKey: fs.contentId, contentType: fs.contentType };
       data.push(row);
     });
   });

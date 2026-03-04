@@ -117,13 +117,7 @@ const exportGroups = async (importData : ImportDataInterface, runImport: (keyNam
       if (gst.length === 0) serviceTimeIds = [""];
       else gst.forEach((time) => time?.serviceTimeId ? serviceTimeIds.push(time?.serviceTimeId?.toString()) : null );
       serviceTimeIds.forEach((_serviceTimeId) => {
-        const row = {
-          "Event ID": g.importKey,
-          "Instance ID": g.id,
-          Name: g.name,
-          "Start Date": g.startDate,
-          "End Date": g.endDate
-        };
+        const row = { "Event ID": g.importKey, "Instance ID": g.id, Name: g.name, "Start Date": g.startDate, "End Date": g.endDate };
         data.push(row);
       });
     });

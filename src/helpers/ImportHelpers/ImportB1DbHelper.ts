@@ -73,12 +73,7 @@ const getCampusServiceTimes = async () => {
   serviceTimes.forEach((st) => {
     const service: ImportServiceInterface = ImportHelper.getById(services, st.serviceId);
     const campus: ImportCampusInterface = ImportHelper.getById(campuses, service.campusId);
-    const row = {
-      importKey: st.id,
-      campus: campus.name,
-      service: service.name,
-      time: st.name
-    };
+    const row = { importKey: st.id, campus: campus.name, service: service.name, time: st.name };
     data.push(row);
   });
   return Papa.unparse(data);
@@ -170,12 +165,7 @@ const getAttendance = async () => {
     const session: ImportSessionInterface = ImportHelper.getById(sessions, vs.sessionId);
     session.importKey = session.id;
     if (visit && session) {
-      const row = {
-        date: visit.visitDate,
-        serviceTimeKey: session.serviceTimeId,
-        groupKey: session.groupId,
-        personKey: visit.personId
-      };
+      const row = { date: visit.visitDate, serviceTimeKey: session.serviceTimeId, groupKey: session.groupId, personKey: visit.personId };
       data.push(row);
     }
   });
