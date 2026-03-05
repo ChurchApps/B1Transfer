@@ -2,7 +2,7 @@ import React, { ReactNode } from "react";
 import { Box, Typography, Stack } from "@mui/material";
 
 interface PageHeaderProps {
-  icon: ReactNode;
+  icon?: ReactNode;
   title: string;
   subtitle?: string;
   children?: ReactNode; // For action buttons or tabs
@@ -16,7 +16,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   children,
   statistics
 }) => (
-  <Box sx={{ backgroundColor: "var(--c1l2)", color: "#FFF", padding: "24px" }}>
+  <Box sx={{ backgroundColor: "var(--c1l2)", color: "#FFF", py: 6, px: 3 }}>
     <Stack
       direction={{ xs: "column", md: "row" }}
       spacing={{ xs: 2, md: 4 }}
@@ -24,26 +24,51 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
       sx={{ width: "100%" }}
     >
       {/* Left side: Title and Icon */}
-      <Stack direction="row" spacing={2} alignItems="center" sx={{ flex: 1 }}>
-        <Box
-          sx={{
-            backgroundColor: "rgba(255,255,255,0.2)",
-            borderRadius: "12px",
-            p: 1.5,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center"
-          }}
-        >
-          {React.cloneElement(icon as React.ReactElement<any>, { sx: { fontSize: 32, color: "#FFF" } })}
-        </Box>
+      {icon ? (
+        <Stack direction="row" spacing={2} alignItems="center" sx={{ flex: 1 }}>
+          <Box
+            sx={{
+              backgroundColor: "rgba(255,255,255,0.2)",
+              borderRadius: "12px",
+              p: 1.5,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
+            }}
+          >
+            {React.cloneElement(icon as React.ReactElement<any>, { sx: { fontSize: 32, color: "#FFF" } })}
+          </Box>
+          <Box sx={{ flex: 1 }}>
+            <Typography
+              variant="h3"
+              sx={{
+                fontWeight: 500,
+                mb: 1,
+                color: "#FFF"
+              }}
+            >
+              {title}
+            </Typography>
+            {subtitle && (
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 400,
+                  color: "rgba(255,255,255,0.85)"
+                }}
+              >
+                {subtitle}
+              </Typography>
+            )}
+          </Box>
+        </Stack>
+      ) : (
         <Box sx={{ flex: 1 }}>
           <Typography
-            variant="h4"
+            variant="h3"
             sx={{
-              fontWeight: 600,
-              mb: 0.5,
-              fontSize: { xs: "1.75rem", md: "2.125rem" },
+              fontWeight: 500,
+              mb: 1,
               color: "#FFF"
             }}
           >
@@ -51,17 +76,17 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
           </Typography>
           {subtitle && (
             <Typography
-              variant="body1"
+              variant="h6"
               sx={{
-                color: "rgba(255,255,255,0.9)",
-                fontSize: { xs: "0.875rem", md: "1rem" }
+                fontWeight: 400,
+                color: "rgba(255,255,255,0.85)"
               }}
             >
               {subtitle}
             </Typography>
           )}
         </Box>
-      </Stack>
+      )}
 
       {/* Statistics */}
       {statistics && statistics.length > 0 && (

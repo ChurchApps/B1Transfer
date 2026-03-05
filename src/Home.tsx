@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Tabs, Tab, Box, Typography, Button, Card, CardContent } from "@mui/material";
-import { ImportExport as ImportExportIcon } from "@mui/icons-material";
 import "react-activity/dist/Dots.css";
 import "react-activity/dist/Windmill.css";
 import { Footer, Header } from "./components";
@@ -55,7 +54,6 @@ export const Home = () => {
       <Box sx={{ minHeight: "calc(100vh - 200px)" }}>
         {/* Page Header */}
         <PageHeader
-          icon={<ImportExportIcon />}
           title="Import/Export Tool"
           subtitle="Backup, transfer, and import your B1 data"
         >
