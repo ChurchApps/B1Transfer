@@ -130,7 +130,6 @@ export const TabDestination = (props: Props) => {
       } catch (err) {
         const message = err instanceof Error ? err.message : "Unknown error";
         setExportError(`Export failed: ${message}`);
-        props.setActiveTab("step3");
         props.setIsExporting(false);
       }
     }
