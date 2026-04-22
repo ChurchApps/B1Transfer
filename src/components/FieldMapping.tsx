@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Select, MenuItem, Button, Alert, Chip } from "@mui/material";
+import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Select, MenuItem, Button, Alert, Chip, TextField } from "@mui/material";
 import { FieldMapping as FieldMappingType, B1_PEOPLE_FIELDS } from "../types";
 
 interface Props {
   columns: string[];
   sampleData: any[];
-  onConfirm: (mappings: FieldMappingType[]) => void;
+  onConfirm: (mappings: FieldMappingType[], formName: string) => void;
 }
 
 const autoDetectMapping = (column: string): string => {
@@ -80,6 +80,7 @@ const autoDetectMapping = (column: string): string => {
 
 export const FieldMappingUI: React.FC<Props> = ({ columns, sampleData, onConfirm }) => {
   const [mappings, setMappings] = useState<FieldMappingType[]>([]);
+  const [formName, setFormName] = useState<string>("Imported Data");
 
   useEffect(() => {
     const initial = columns.map(col => ({
@@ -97,6 +98,8 @@ export const FieldMappingUI: React.FC<Props> = ({ columns, sampleData, onConfirm
 
   const mappedCount = mappings.filter(m => m.targetField !== "").length;
   const hasName = mappings.some(m => m.targetField === "name.first" || m.targetField === "name.last");
+  const hasFormAnswers = mappings.some(m => m.targetField === "formAnswer");
+  const formNameValid = !hasFormAnswers || formName.trim().length > 0;
 
   return (
     <Box>
@@ -111,6 +114,23 @@ export const FieldMappingUI: React.FC<Props> = ({ columns, sampleData, onConfirm
         <Alert severity="warning" sx={{ mb: 2 }}>
           Please map at least a First Name or Last Name field to proceed.
         </Alert>
+      )}
+
+      {hasFormAnswers && (
+        <Box sx={{ mb: 2, p: 2, bgcolor: "grey.50", borderRadius: 1, maxWidth: 500 }}>
+          <Typography variant="body2" sx={{ mb: 1 }}>
+            Columns mapped to <strong>Form Answer</strong> will be saved as a form attached to each person. Give the form a name:
+          </Typography>
+          <TextField
+            size="small"
+            fullWidth
+            label="Form Name"
+            value={formName}
+            onChange={(e) => setFormName(e.target.value)}
+            error={!formNameValid}
+            helperText={!formNameValid ? "Form name is required" : ""}
+          />
+        </Box>
       )}
 
       <TableContainer sx={{ maxHeight: 400, mb: 2 }}>
@@ -157,8 +177,8 @@ export const FieldMappingUI: React.FC<Props> = ({ columns, sampleData, onConfirm
 
       <Button
         variant="contained"
-        disabled={!hasName}
-        onClick={() => onConfirm(mappings)}
+        disabled={!hasName || !formNameValid}
+        onClick={() => onConfirm(mappings, formName.trim())}
         sx={{ textTransform: "none", borderRadius: 2, fontWeight: 600, px: 4 }}
       >
         Confirm Mapping & Import ({mappedCount} fields mapped)

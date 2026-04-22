@@ -122,9 +122,9 @@ export const TabSource = (props: Props) => {
     }
   }, [props.dataImportSource]);
 
-  const handleMappingConfirm = (mappings: FieldMappingType[]) => {
+  const handleMappingConfirm = (mappings: FieldMappingType[], formName: string) => {
     try {
-      const importData = readCustomCsv(csvData, mappings);
+      const importData = readCustomCsv(csvData, mappings, formName);
       setShowMapping(false);
       props.setImportData(importData);
       props.setActiveTab("step2");

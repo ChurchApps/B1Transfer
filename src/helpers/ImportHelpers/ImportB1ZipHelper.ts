@@ -29,6 +29,37 @@ let forms: ImportFormsInterface[] = [];
 let questions: ImportQuestionsInterface[] = [];
 let formSubmissions: ImportFormSubmissions[] = [];
 let answers: ImportAnswerInterface[] = [];
+let acceptedPeopleRows: any[] = [];
+
+// Columns explicitly consumed by loadPeople (and ExportB1ZipHelper.exportPeople).
+// Anything else in people.csv is treated as a custom field and routed to a form.
+const KNOWN_PEOPLE_COLUMNS = new Set<string>([
+  "importKey",
+  "household",
+  "householdName",
+  "householdRole",
+  "displayName",
+  "lastName",
+  "firstName",
+  "middleName",
+  "nickName",
+  "prefix",
+  "suffix",
+  "birthDate",
+  "gender",
+  "maritalStatus",
+  "membershipStatus",
+  "homePhone",
+  "mobilePhone",
+  "workPhone",
+  "email",
+  "address1",
+  "address2",
+  "city",
+  "state",
+  "zip",
+  "photo"
+]);
 
 const readB1Zip = async (file: File): Promise<ImportDataInterface> => {
   const zip = await JSZip.loadAsync(file);
@@ -43,6 +74,8 @@ const readB1Zip = async (file: File): Promise<ImportDataInterface> => {
   zip.files["questions.csv"] && loadQuestions(UploadHelper.readCsvString(await zip.file("questions.csv").async("string")));
   zip.files["formSubmissions.csv"] && loadFormSubmissions(UploadHelper.readCsvString(await zip.file("formSubmissions.csv").async("string")));
   zip.files["answers.csv"] && loadAnswers(UploadHelper.readCsvString(await zip.file("answers.csv").async("string")));
+
+  extractPeopleCustomFieldsAsForm();
 
   return {
     people: people,
@@ -193,8 +226,10 @@ const loadGroupMembers = (data: any) => {
 const loadPeople = (data: any, zip: any) => {
   people = [];
   households = [];
+  acceptedPeopleRows = [];
   for (let i = 0; i < data.length; i++) {
     if (data[i].lastName !== undefined) {
+      const rawRow = { ...data[i] };
       const p = data[i] as ImportPersonInterface;
       p.name = { first: data[i].firstName ?? "", last: data[i].lastName ?? "", middle: data[i].middleName ?? "", nick: data[i].nickName ?? "", display: data[i].displayName ?? "", title: data[i].prefix ?? "", suffix: data[i].suffix ?? "" };
       p.contactInfo = { address1: data[i].address1 ?? "", address2: data[i].address2 ?? "", city: data[i].city ?? "", state: data[i].state ?? "", zip: data[i].zip ?? "", homePhone: data[i].homePhone ?? "", mobilePhone: data[i].mobilePhone ?? "", workPhone: data[i].workPhone ?? "", email: data[i].email ?? "" };
@@ -208,9 +243,70 @@ const loadPeople = (data: any, zip: any) => {
         });
       }
       people.push(p);
+      acceptedPeopleRows.push(rawRow);
     }
   }
   return people;
+};
+
+const extractPeopleCustomFieldsAsForm = () => {
+  if (acceptedPeopleRows.length === 0) return;
+
+  const customColumns: string[] = [];
+  const seen = new Set<string>();
+  acceptedPeopleRows.forEach(row => {
+    Object.keys(row).forEach(col => {
+      const trimmed = col.trim();
+      if (trimmed === "" || KNOWN_PEOPLE_COLUMNS.has(trimmed) || seen.has(col)) return;
+      seen.add(col);
+      customColumns.push(col);
+    });
+  });
+  if (customColumns.length === 0) return;
+
+  const hasAnyValue = acceptedPeopleRows.some(row =>
+    customColumns.some(c => (row[c] ?? "").toString().trim() !== ""));
+  if (!hasAnyValue) return;
+
+  const FORM_KEY = "custom_people_form";
+  forms.push({ importKey: FORM_KEY, name: "Imported Data", contentType: "person" } as ImportFormsInterface);
+  customColumns.forEach((col, idx) => {
+    questions.push({
+      formKey: FORM_KEY,
+      questionKey: `cq_${col}`,
+      title: col,
+      fieldType: "text",
+      sort: idx + 1,
+      required: false
+    } as ImportQuestionsInterface);
+  });
+
+  acceptedPeopleRows.forEach(row => {
+    const personImportKey = row.importKey?.toString() ?? "";
+    if (!personImportKey) return;
+    const rowAnswers: { questionKey: string; value: string }[] = [];
+    customColumns.forEach(col => {
+      const value = (row[col] ?? "").toString().trim();
+      if (value !== "") rowAnswers.push({ questionKey: `cq_${col}`, value });
+    });
+    if (rowAnswers.length === 0) return;
+
+    const submissionKey = `cs_${personImportKey}`;
+    formSubmissions.push({
+      importKey: submissionKey,
+      formKey: FORM_KEY,
+      personKey: personImportKey,
+      contentType: "person",
+      submissionDate: new Date()
+    } as unknown as ImportFormSubmissions);
+    rowAnswers.forEach(a => {
+      answers.push({
+        questionKey: a.questionKey,
+        formSubmissionKey: submissionKey,
+        value: a.value
+      } as ImportAnswerInterface);
+    });
+  });
 };
 
 const assignHousehold = (households: ImportHouseholdInterface[], person: any) => {

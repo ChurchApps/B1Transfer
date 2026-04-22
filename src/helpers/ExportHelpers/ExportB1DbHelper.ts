@@ -217,6 +217,7 @@ const exportForms = async (exportData: ImportDataInterface, tmpPeople: ImportPer
         fs.formId = formId;
         fs.contentId = ImportHelper.getByImportKey(tmpPeople, fs.personKey).id;
 
+        const fsKey = (fs as any).importKey;
         const questions: any[] = [];
         const answers: any[] = [];
         tmpQuestions.forEach(q => {
@@ -224,9 +225,11 @@ const exportForms = async (exportData: ImportDataInterface, tmpPeople: ImportPer
             questions.push(q);
 
             tmpAnswers.forEach(a => {
-              if (a.questionKey === q.questionKey) {
-                answers.push({ questionId: q.id, value: a.value });
-              }
+              if (a.questionKey !== q.questionKey) return;
+              // If both sides carry a submission key, require an exact match so
+              // answers don't leak across submissions in the same form.
+              if (fsKey && a.formSubmissionKey && a.formSubmissionKey !== fsKey) return;
+              answers.push({ questionId: q.id, value: a.value });
             });
 
           }

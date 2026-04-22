@@ -36,5 +36,6 @@ export const B1_PEOPLE_FIELDS = [
   { value: "maritalStatus", label: "Marital Status" },
   { value: "membershipStatus", label: "Membership Status" },
   { value: "householdName", label: "Household/Family Name" },
-  { value: "groupName", label: "Group Name" }
+  { value: "groupName", label: "Group Name" },
+  { value: "formAnswer", label: "Form Answer (custom field)" }
 ] as const;
