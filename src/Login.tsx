@@ -2,7 +2,7 @@ import * as React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useCookies } from "react-cookie";
 import UserContext from "./UserContext";
-import { LoginPage } from "@churchapps/apphelper-login";
+import { LoginPage } from "@churchapps/apphelper/login";
 import { ChurchInterface, UserInterface } from "@churchapps/apphelper";
 import ReactGA from "react-ga4";
 import { EnvironmentHelper } from "./helpers";
