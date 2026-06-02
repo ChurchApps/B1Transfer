@@ -27,19 +27,20 @@
     "xlsx": "^0.18.5"
   },
   "scripts": {
+    "preinstall": "node -e \"if(!(process.env.npm_config_user_agent||'').startsWith('yarn')){console.error('\\n[B1Transfer] This project uses Yarn (Berry). Run \\'yarn install\\' instead of npm/pnpm.\\n');process.exit(1)}\"",
     "start": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint --fix src/",
-    "predeploy-staging": "export VITE_STAGE=staging&& npm run build",
+    "predeploy-staging": "VITE_STAGE=staging yarn build",
     "exec-deploy-staging": "aws s3 sync build/ s3://staging-chums-transfer",
     "postdeploy-staging": "aws cloudfront create-invalidation --distribution-id E28G9AODQAH4HQ --paths \"/*\"",
-    "deploy-staging": "npm run predeploy-staging && npm run exec-deploy-staging && npm run postdeploy-staging",
-    "predeploy-prod": "export VITE_STAGE=prod&& npm run build",
+    "deploy-staging": "yarn predeploy-staging && yarn exec-deploy-staging && yarn postdeploy-staging",
+    "predeploy-prod": "VITE_STAGE=prod yarn build",
     "exec-deploy-prod": "aws s3 sync build/ s3://chums-transfer",
     "postdeploy-prod": "aws cloudfront create-invalidation --distribution-id E29Q1TKCS5G75P --paths \"/*\"",
-    "deploy-prod": "npm run predeploy-prod && npm run exec-deploy-prod && npm run postdeploy-prod",
-    "postinstall": "copyfiles -a -f node_modules/@churchapps/apphelper/dist/public/locales/** public/apphelper/locales && copyfiles -a -f node_modules/@churchapps/apphelper/dist/public/css/** public/apphelper/css"
+    "deploy-prod": "yarn predeploy-prod && yarn exec-deploy-prod && yarn postdeploy-prod",
+    "postinstall": "copyfiles -a -f \"node_modules/@churchapps/apphelper/dist/public/locales/**\" public/apphelper/locales && copyfiles -a -f \"node_modules/@churchapps/apphelper/dist/public/css/**\" public/apphelper/css"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx,js}": [
@@ -68,5 +69,11 @@
     "lint-staged": "^16.1.2",
     "typescript": "^5.7.3",
     "vite": "^6.0.11"
+  },
+  "packageManager": "yarn@4.15.0",
+  "dependenciesMeta": {
+    "esbuild": {
+      "built": true
+    }
   }
 }
