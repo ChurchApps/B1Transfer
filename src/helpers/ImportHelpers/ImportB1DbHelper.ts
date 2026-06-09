@@ -65,7 +65,7 @@ const getB1Data = async (): Promise<ImportDataInterface> => {
 
 const getCampusServiceTimes = async () => {
   const promises = [];
-  promises.push(ApiHelper.get("/campuses", "AttendanceApi").then((data: any) => campuses = data));
+  promises.push(ApiHelper.get("/campuses", "MembershipApi").then((data: any) => campuses = data));
   promises.push(ApiHelper.get("/services", "AttendanceApi").then((data: any) => services = data));
   promises.push(ApiHelper.get("/servicetimes", "AttendanceApi").then((data: any) => serviceTimes = data));
   await Promise.all(promises);

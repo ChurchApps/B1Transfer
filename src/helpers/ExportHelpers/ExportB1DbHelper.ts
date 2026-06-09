@@ -85,7 +85,7 @@ const exportCampuses = async (exportData: ImportDataInterface, runImport: (keyNa
 
   await runImport("Campuses/Services/Times", async () => {
     if (tmpCampuses.length > 0) {
-      await postInBatches("/campuses", tmpCampuses, "AttendanceApi");
+      await postInBatches("/campuses", tmpCampuses, "MembershipApi");
     }
 
     if (tmpServices.length > 0) {
