@@ -4,10 +4,10 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@churchapps/apphelper": "^0.8.0",
-    "@churchapps/helpers": "^1.5.0",
-    "@mui/icons-material": "^7.2.0",
-    "@mui/material": "^7.2.0",
+    "@churchapps/apphelper": "^0.9.0",
+    "@churchapps/helpers": "^1.6.1",
+    "@mui/icons-material": "^7.3.11",
+    "@mui/material": "^7.3.11",
     "@stripe/react-stripe-js": "^3.9.1",
     "@stripe/stripe-js": "^7.8.0",
     "@types/papaparse": "^5.3.16",
@@ -23,7 +23,7 @@
     "react-cookie": "^8.0.1",
     "react-dom": "^19.1.0",
     "react-ga4": "^2.1.0",
-    "react-router-dom": "^7.6.3",
+    "react-router-dom": "^7.15.0",
     "xlsx": "^0.18.5"
   },
   "scripts": {
