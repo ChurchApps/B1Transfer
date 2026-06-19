@@ -54,11 +54,39 @@ export const TabRun = (props: Props) => {
   };
 
   const steps = useMemo(() => {
-    let s = [
-      "Campuses/Services/Times", "People", "Photos", "Groups", "Group Members", "Donations", "Attendance", "Forms", "Questions", "Answers", "Form Submissions", "Compressing"
+    if (props.dataExportSource === DataSourceType.B1_DB) {
+      return [
+        "Campuses/Services/Times",
+        "Households",
+        "People",
+        "Photos",
+        "Groups",
+        "Group Service Times",
+        "Group Members",
+        "Attendance",
+        "Funds",
+        "Donation Batches",
+        "Donations",
+        "Forms",
+        "Questions",
+        "Answers",
+        "Form Submissions"
+      ];
+    }
+    return [
+      "Campuses/Services/Times",
+      "People",
+      "Photos",
+      "Groups",
+      "Group Members",
+      "Donations",
+      "Attendance",
+      "Forms",
+      "Questions",
+      "Answers",
+      "Form Submissions",
+      "Compressing"
     ];
-    if (props.dataExportSource === DataSourceType.B1_DB) s = s.filter(step => step !== "Compressing");
-    return s;
   }, [props.dataExportSource]);
 
   const { completedCount, errorCount, isAllDone } = useMemo(() => {

@@ -30,10 +30,10 @@ const postInBatches = async <T extends { id?: string }>(
       progressCallback(currentBatch, totalBatches, isLastBatch);
     }
 
-    let batchResults: any[] | null = null;
+    let batchResults: T[] = [];
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
-        batchResults = await ApiHelper.post(endpoint, batch, apiName);
+        batchResults = (await ApiHelper.post(endpoint, batch, apiName)) || [];
         break;
       } catch (e) {
         if (attempt === MAX_RETRIES) throw e;
