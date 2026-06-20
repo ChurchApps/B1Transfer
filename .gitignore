@@ -44,6 +44,13 @@ build/Release
 node_modules/
 jspm_packages/
 
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
+tests/.auth-state.json
+tests/.tmp/
+
 # TypeScript v1 declaration files
 typings/
 

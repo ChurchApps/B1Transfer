@@ -230,7 +230,9 @@ const exportFormSubmissions = async (importData: ImportDataInterface, runImport:
   const data: any[] = [];
   await runImport("Form Submissions", async () => {
     formSubmissions.forEach(fs => {
-      const row = { formKey: fs.formId, personKey: fs.contentId, contentType: fs.contentType };
+      // importKey carries the submission id so answers.csv (which references it) can be
+      // matched back to the right submission on re-import instead of leaking across the form.
+      const row = { importKey: fs.id, formKey: fs.formId, personKey: fs.contentId, contentType: fs.contentType };
       data.push(row);
     });
   });

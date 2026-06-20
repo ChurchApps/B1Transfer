@@ -1,15 +1,17 @@
 import { useState } from "react";
-import { Tabs, Tab, Box, Typography, Button, Card, CardContent } from "@mui/material";
+import { Box, Typography, Button, Card, CardContent, Stepper, Step, StepButton } from "@mui/material";
+import { ImportExport } from "@mui/icons-material";
+import { PageHeader } from "@churchapps/apphelper";
 import "react-activity/dist/Dots.css";
 import "react-activity/dist/Windmill.css";
 import { Footer, Header } from "./components";
-import { PageHeader } from "./components/ui";
 import { ImportDataInterface } from "./helpers/ImportHelper";
 import { TabSource } from "./components/TabSource";
 import { TabPreview } from "./components/TabPreview";
 import { TabDestination } from "./components/TabDestination";
 import { TabRun } from "./components/TabRun";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { undoB1DbImport, UndoEntry } from "./helpers/ExportHelpers/ExportB1DbHelper";
 
 export interface ExportCategoriesInterface {
   people: boolean;
@@ -21,6 +23,13 @@ export interface ExportCategoriesInterface {
 
 const defaultCategories: ExportCategoriesInterface = { people: true, groups: true, attendance: true, donations: true, forms: true };
 
+const STEPS = [
+  { key: "step1", label: "Source" },
+  { key: "step2", label: "Preview" },
+  { key: "step3", label: "Destination" },
+  { key: "step4", label: "Run" }
+];
+
 export const Home = () => {
   const [dataImportSource, setDataImportSource] = useState<string | null>(null);
   const [dataExportSource, setDataExportSource] = useState<string | null>(null);
@@ -29,12 +38,19 @@ export const Home = () => {
   const [isExporting, setIsExporting] = useState(false);
 
   const [status, setStatus] = useState<Record<string, string>>({});
+  const [undoLog, setUndoLog] = useState<UndoEntry[]>([]);
   const [activeTab, setActiveTab] = useState<string>("step1");
+
+  const handleUndo = async (onProgress?: (done: number, total: number) => void) => {
+    await undoB1DbImport(undoLog, onProgress);
+    setUndoLog([]);
+  };
 
   const [showFinalCount, setShowFinalCount] = useState<boolean>(false);
   const [exportCategories, setExportCategories] = useState<ExportCategoriesInterface>({ ...defaultCategories });
 
   const isLoadingSourceData = dataImportSource && !importData;
+  const activeIndex = STEPS.findIndex(s => s.key === activeTab);
 
   const handleStartOver = () => {
     setActiveTab("step1");
@@ -43,20 +59,16 @@ export const Home = () => {
     setDataExportSource(null);
     setIsExporting(false);
     setStatus({});
+    setUndoLog([]);
     setShowFinalCount(false);
     setExportCategories({ ...defaultCategories });
   };
-
 
   return (
     <>
       <Header />
       <Box sx={{ minHeight: "calc(100vh - 200px)" }}>
-        {/* Page Header */}
-        <PageHeader
-          title="Import/Export Tool"
-          subtitle="Backup, transfer, and import your B1 data"
-        >
+        <PageHeader icon={<ImportExport />} title="Import / Export Tool" subtitle="Backup, transfer, and import your B1 data">
           <Button
             variant="outlined"
             size="small"
@@ -64,74 +76,38 @@ export const Home = () => {
             sx={{
               color: "#FFF",
               borderColor: "rgba(255,255,255,0.5)",
-              textTransform: "none",
-              fontWeight: 600,
-              "&:hover": {
-                borderColor: "#FFF",
-                backgroundColor: "rgba(255,255,255,0.1)"
-              }
+              "&:hover": { borderColor: "#FFF", backgroundColor: "rgba(255,255,255,0.1)" }
             }}
           >
             Go to B1
           </Button>
         </PageHeader>
 
-        <Box sx={{ py: 4, px: 3 }}>
-          {/* Instructions Section */}
-          <Card sx={{
-            borderRadius: 2,
-            border: "1px solid",
-            borderColor: "grey.200",
-            mb: 4
-          }}>
-            <CardContent sx={{ p: 4 }}>
-              <Typography variant="body1" paragraph sx={{ color: "text.primary", mb: 2 }}>
-                Welcome to the import/export tool for B1. You can use this file to backup your B1 data
-                or transfer your data out of B1 to be used in another system.
-                If you're just getting started you can also use this tool to import existing data into B1.
+        <Box sx={{ py: 4, px: 3, maxWidth: 1100, mx: "auto" }}>
+          <Card sx={{ mb: 3 }}>
+            <CardContent sx={{ p: 3 }}>
+              <Typography variant="body1" sx={{ mb: 1.5 }}>
+                Back up your B1 data, move it to another system, or load existing data into B1 for the first time.
               </Typography>
-              <Typography variant="body1" sx={{ color: "text.secondary" }}>
-                We support B1, Breeze, and Planning Center file formats, plus custom CSV/Excel files with field mapping.
-                You can convert between any of these formats or read/write directly to your hosted B1 database.
+              <Typography variant="body2" color="text.secondary">
+                Supports B1, Breeze, and Planning Center files, plus custom CSV/Excel with field mapping. Convert between
+                any of these formats or read and write directly to your hosted B1 database.
               </Typography>
             </CardContent>
           </Card>
 
-          {/* Wizard Tabs */}
-          <Card sx={{
-            borderRadius: 2,
-            border: "1px solid",
-            borderColor: "grey.200",
-            overflow: "hidden"
-          }}>
-            <Tabs
-              value={activeTab}
-              onChange={(_, newValue) => setActiveTab(newValue)}
-              variant="fullWidth"
-              sx={{
-                backgroundColor: "grey.50",
-                "& .MuiTab-root": {
-                  textTransform: "none",
-                  fontWeight: 500,
-                  fontSize: "0.875rem"
-                },
-                "& .Mui-selected": {
-                  color: "var(--c1)",
-                  fontWeight: 600
-                }
-              }}
-            >
-              <Tab label="Step 1 - Source" value="step1" disabled={activeTab !== "step1"} />
-              <Tab label="Step 2 - Preview" value="step2" disabled={activeTab !== "step2"} />
-              <Tab label="Step 3 - Destination" value="step3" disabled={activeTab !== "step3"} />
-              <Tab label="Step 4 - Run" value="step4" disabled={activeTab !== "step4"} />
-            </Tabs>
+          <Stepper nonLinear activeStep={activeIndex} sx={{ mb: 4 }}>
+            {STEPS.map((s, i) => (
+              <Step key={s.key} completed={i < activeIndex}>
+                <StepButton color="inherit" disabled={i >= activeIndex || isExporting} onClick={() => setActiveTab(s.key)}>
+                  {s.label}
+                </StepButton>
+              </Step>
+            ))}
+          </Stepper>
 
-            <Box sx={{
-              p: 4,
-              bgcolor: "background.paper",
-              minHeight: 400
-            }}>
+          <Card>
+            <CardContent sx={{ p: { xs: 2, sm: 4 }, minHeight: 360 }}>
               <ErrorBoundary>
                 {activeTab === "step1" && (
                   <TabSource importData={importData} isLoadingSourceData={isLoadingSourceData} setActiveTab={setActiveTab} dataImportSource={dataImportSource} setDataImportSource={setDataImportSource} setImportData={setImportData} />
@@ -152,31 +128,19 @@ export const Home = () => {
                     setShowFinalCount={setShowFinalCount}
                     exportCategories={exportCategories}
                     setExportCategories={setExportCategories}
+                    setUndoLog={setUndoLog}
                   />
                 )}
                 {activeTab === "step4" && (
-                  <TabRun dataExportSource={dataExportSource} isExporting={isExporting} status={status} />
+                  <TabRun dataExportSource={dataExportSource} isExporting={isExporting} status={status} undoCount={undoLog.length} onUndo={handleUndo} />
                 )}
               </ErrorBoundary>
-            </Box>
+            </CardContent>
           </Card>
 
-          {/* Action Buttons */}
           {importData && (
-            <Box sx={{ mt: 4, display: "flex", justifyContent: "center" }}>
-              <Button
-                onClick={handleStartOver}
-                variant="outlined"
-                color="error"
-                size="large"
-                sx={{
-                  px: 4,
-                  py: 1.5,
-                  textTransform: "none",
-                  borderRadius: 2,
-                  fontWeight: 600
-                }}
-              >
+            <Box sx={{ mt: 3, display: "flex", justifyContent: "center" }}>
+              <Button onClick={handleStartOver} variant="outlined" color="error">
                 Start Over
               </Button>
             </Box>

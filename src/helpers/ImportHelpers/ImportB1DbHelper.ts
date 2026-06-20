@@ -72,7 +72,8 @@ const getCampusServiceTimes = async () => {
   const data: any[] = [];
   serviceTimes.forEach((st) => {
     const service: ImportServiceInterface = ImportHelper.getById(services, st.serviceId);
-    const campus: ImportCampusInterface = ImportHelper.getById(campuses, service.campusId);
+    const campus: ImportCampusInterface = service ? ImportHelper.getById(campuses, service.campusId) : null;
+    if (!service || !campus) return; // skip orphan service times rather than throwing away the whole load
     const row = { importKey: st.id, campus: campus.name, service: service.name, time: st.name };
     data.push(row);
   });
@@ -111,10 +112,14 @@ const getForms = async () => {
 };
 
 const getQuestions = async () => {
-  questions = await ApiHelper.get("/questions", "MembershipApi");
-  questions.forEach((q) => {
+  // GET /questions returns nothing without a formId, so fetch per form or every question is silently dropped.
+  questions = [];
+  const formList: any[] = await ApiHelper.get("/forms", "MembershipApi");
+  const perForm = await Promise.all(formList.map(f => ApiHelper.get(`/questions?formId=${f.id}`, "MembershipApi")));
+  perForm.forEach((qs: any[]) => qs.forEach((q) => {
     q.questionKey = q.id;
-  });
+    questions.push(q);
+  }));
 };
 
 const getFormSubmissions = async () => {
@@ -161,10 +166,12 @@ const getAttendance = async () => {
   const data: any[] = [];
   visitSessions.forEach((vs) => {
     const visit: ImportVisitInterface = ImportHelper.getById(visits, vs.visitId);
-    visit.importKey = visit.id;
     const session: ImportSessionInterface = ImportHelper.getById(sessions, vs.sessionId);
-    session.importKey = session.id;
+    // Orphan visit/session refs (e.g. a deleted session) must be skipped, not dereferenced —
+    // throwing here rejects the whole Promise.all and silently drops every later category.
     if (visit && session) {
+      visit.importKey = visit.id;
+      session.importKey = session.id;
       const row = { date: visit.visitDate, serviceTimeKey: session.serviceTimeId, groupKey: session.groupId, personKey: visit.personId };
       data.push(row);
     }

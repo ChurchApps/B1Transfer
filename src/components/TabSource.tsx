@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback } from "react";
-import { Select, MenuItem, FormControl, InputLabel, Box, Typography, Link, Alert } from "@mui/material";
+import { Box, Typography, Link, Alert } from "@mui/material";
 import { CloudUpload } from "@mui/icons-material";
 import { ImportDataInterface } from "../helpers/ImportHelper";
 import { DataSourceType, FieldMapping as FieldMappingType } from "../types";
@@ -13,7 +13,23 @@ import readTithelyCsv from "../helpers/ImportHelpers/ImportTithelyHelper";
 import readCCBCsv from "../helpers/ImportHelpers/ImportCCBHelper";
 import { UploadHelper } from "../helpers/UploadHelper";
 import { FieldMappingUI } from "./FieldMapping";
+import { FormatSelector, FormatOption } from "./FormatSelector";
 import Papa from "papaparse";
+
+const primaryFormats: FormatOption[] = [
+  { value: DataSourceType.B1_DB, label: "B1 Database", description: "Read directly from your hosted B1 data" },
+  { value: DataSourceType.B1_ZIP, label: "B1 Import Zip", description: "B1's native backup format" },
+  { value: DataSourceType.CUSTOM_CSV, label: "Custom CSV / Excel", description: "Map your own spreadsheet columns" }
+];
+
+const otherFormats: FormatOption[] = [
+  { value: DataSourceType.BREEZE_ZIP, label: "Breeze Import Zip", description: "Breeze ChMS export file" },
+  { value: DataSourceType.PLANNING_CENTER_ZIP, label: "Planning Center Zip", description: "Planning Center export file" },
+  { value: DataSourceType.TITHELY_CSV, label: "Tithe.ly CSV", description: "Tithe.ly donations export" },
+  { value: DataSourceType.CCB_CSV, label: "CCB / Pushpay CSV", description: "CCB or Pushpay export file" }
+];
+
+const sourceFormats: FormatOption[] = [...primaryFormats, ...otherFormats];
 
 interface Props {
   dataImportSource?: string;
@@ -37,16 +53,6 @@ export const TabSource = (props: Props) => {
   const [csvColumns, setCsvColumns] = useState<string[]>([]);
   const [csvData, setCsvData] = useState<any[]>([]);
   const [showMapping, setShowMapping] = useState(false);
-
-  const dataSourceDropDown = [
-    { label: "B1 DB", value: DataSourceType.B1_DB },
-    { label: "B1 zip", value: DataSourceType.B1_ZIP },
-    { label: "Breeze zip", value: DataSourceType.BREEZE_ZIP },
-    { label: "Planning center zip", value: DataSourceType.PLANNING_CENTER_ZIP },
-    { label: "Custom CSV/XLSX", value: DataSourceType.CUSTOM_CSV },
-    { label: "Tithe.ly CSV", value: DataSourceType.TITHELY_CSV },
-    { label: "CCB/Pushpay CSV", value: DataSourceType.CCB_CSV }
-  ];
 
   const processFile = useCallback(async (file: File) => {
     setParseError(null);
@@ -182,7 +188,7 @@ export const TabSource = (props: Props) => {
     return (
       <Box>
         <Typography variant="h6" component="h2" gutterBottom sx={{ fontWeight: 600, color: "primary.main", mb: 3 }}>
-          Step 1 - Map Fields
+          Map Fields
         </Typography>
         <FieldMappingUI columns={csvColumns} sampleData={csvData.slice(0, 3)} onConfirm={handleMappingConfirm} />
       </Box>
@@ -191,11 +197,11 @@ export const TabSource = (props: Props) => {
 
   return (
     <Box>
-      <Typography variant="h6" component="h2" gutterBottom sx={{ fontWeight: 600, color: "primary.main", mb: 3 }}>
-        Step 1 - Import Source
+      <Typography variant="h6" component="h2" sx={{ fontWeight: 600, color: "primary.main", mb: 0.5 }}>
+        Choose a Data Source
       </Typography>
-      <Typography variant="body1" paragraph>
-        Choose data source for import data
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+        Where is the data you want to import or convert?
       </Typography>
 
       {loginError && (
@@ -214,23 +220,12 @@ export const TabSource = (props: Props) => {
         </Alert>
       )}
 
-      <FormControl fullWidth sx={{ mb: 3, maxWidth: 300 }}>
-        <InputLabel id="import-source-select-label">Data Source</InputLabel>
-        <Select
-          labelId="import-source-select-label"
-          value={props.dataImportSource || ""}
-          label="Data Source"
-          onChange={(e) => handleImportSelection(e.target.value)}
-        >
-          <MenuItem value={DataSourceType.B1_DB}>B1 Database</MenuItem>
-          <MenuItem value={DataSourceType.B1_ZIP}>B1 Import Zip</MenuItem>
-          <MenuItem value={DataSourceType.BREEZE_ZIP}>Breeze Import Zip</MenuItem>
-          <MenuItem value={DataSourceType.PLANNING_CENTER_ZIP}>Planning Center zip</MenuItem>
-          <MenuItem value={DataSourceType.CUSTOM_CSV}>Custom CSV / Excel</MenuItem>
-          <MenuItem value={DataSourceType.TITHELY_CSV}>Tithe.ly CSV</MenuItem>
-          <MenuItem value={DataSourceType.CCB_CSV}>CCB / Pushpay CSV</MenuItem>
-        </Select>
-      </FormControl>
+      <FormatSelector options={primaryFormats} value={props.dataImportSource} onSelect={handleImportSelection} />
+
+      <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5, mt: 1 }}>
+        Other Platforms
+      </Typography>
+      <FormatSelector options={otherFormats} value={props.dataImportSource} onSelect={handleImportSelection} />
 
       {props.dataImportSource === DataSourceType.CUSTOM_CSV && (
         <Alert severity="info" sx={{ mb: 2, maxWidth: 500 }}>
@@ -258,15 +253,15 @@ export const TabSource = (props: Props) => {
               p: 4,
               textAlign: "center",
               cursor: "pointer",
-              bgcolor: isDragging ? "primary.50" : "grey.50",
+              bgcolor: isDragging ? "rgba(21,101,192,0.06)" : "grey.50",
               transition: "all 0.2s ease",
-              "&:hover": { borderColor: "primary.main", bgcolor: "primary.50" },
+              "&:hover": { borderColor: "primary.main", bgcolor: "rgba(21,101,192,0.06)" },
               maxWidth: 500
             }}
           >
             <CloudUpload sx={{ fontSize: 48, color: isDragging ? "primary.main" : "grey.400", mb: 1 }} />
             <Typography variant="body1" sx={{ fontWeight: 600, mb: 0.5 }}>
-              Drag & drop your {dataSourceDropDown.find(s => s.value === props.dataImportSource)?.label} file here
+              Drag & drop your {sourceFormats.find(s => s.value === props.dataImportSource)?.label} file here
             </Typography>
             <Typography variant="body2" color="text.secondary">
               or click to browse

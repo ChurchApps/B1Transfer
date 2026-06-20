@@ -40,6 +40,7 @@ const autoDetectMapping = (column: string): string => {
     "work phone": "contactInfo.workPhone",
     "workphone": "contactInfo.workPhone",
     "address": "contactInfo.address1",
+    "address line": "contactInfo.address1",
     "address line 1": "contactInfo.address1",
     "street": "contactInfo.address1",
     "address1": "contactInfo.address1",

@@ -1,17 +1,27 @@
 import React, { useState } from "react";
-import { Select, MenuItem, FormControl, InputLabel, Box, Typography, Button, Alert, Link, FormGroup, FormControlLabel, Checkbox } from "@mui/material";
+import { Box, Typography, Button, Alert, Link, FormGroup, FormControlLabel, Checkbox } from "@mui/material";
+import { FormatSelector, FormatOption } from "./FormatSelector";
 import { ImportDataInterface } from "../helpers/ImportHelper";
 import { DataSourceType } from "../types";
 import UserContext from "../UserContext";
 import getB1Data from "../helpers/ImportHelpers/ImportB1DbHelper";
 import generateBreezeZip from "../helpers/ExportHelpers/ExportBreezeZipHelper";
 import generateB1Zip from "../helpers/ExportHelpers/ExportB1ZipHelper";
-import exportToB1Db from "../helpers/ExportHelpers/ExportB1DbHelper";
+import exportToB1Db, { UndoEntry } from "../helpers/ExportHelpers/ExportB1DbHelper";
 import generatePlanningCenterZip from "../helpers/ExportHelpers/ExportPlanningCenterZipHelper";
 import generateTithelyZip from "../helpers/ExportHelpers/ExportTithelyHelper";
 import generateCCBZip from "../helpers/ExportHelpers/ExportCCBHelper";
 import { FinalCountPreview } from "./FinalCountPreview";
 import { ExportCategoriesInterface } from "../Home";
+
+const destinationFormats: FormatOption[] = [
+  { value: DataSourceType.B1_DB, label: "B1 Database", description: "Write directly into your hosted B1 data" },
+  { value: DataSourceType.B1_ZIP, label: "B1 Export Zip", description: "B1's native backup format" },
+  { value: DataSourceType.BREEZE_ZIP, label: "Breeze Export Zip", description: "Import into Breeze ChMS" },
+  { value: DataSourceType.PLANNING_CENTER_ZIP, label: "Planning Center Zip", description: "Import into Planning Center" },
+  { value: DataSourceType.TITHELY_CSV, label: "Tithe.ly Export", description: "Tithe.ly donations format" },
+  { value: DataSourceType.CCB_CSV, label: "CCB / Pushpay Export", description: "CCB or Pushpay format" }
+];
 
 interface Props {
   dataImportSource?: string;
@@ -25,6 +35,7 @@ interface Props {
   setShowFinalCount: (showing: boolean) => void;
   exportCategories: ExportCategoriesInterface;
   setExportCategories: (cats: ExportCategoriesInterface) => void;
+  setUndoLog: (log: UndoEntry[]) => void;
 }
 
 export const TabDestination = (props: Props) => {
@@ -100,7 +111,8 @@ export const TabDestination = (props: Props) => {
       try {
         switch (e) {
           case DataSourceType.B1_DB: {
-            await exportToB1Db(exportData, setProgress);
+            const log = await exportToB1Db(exportData, setProgress);
+            props.setUndoLog(log);
             break;
           }
           case DataSourceType.B1_ZIP: {
@@ -149,11 +161,11 @@ export const TabDestination = (props: Props) => {
 
   return (
     <Box>
-      <Typography variant="h6" component="h2" gutterBottom sx={{ fontWeight: 600, color: "primary.main", mb: 3 }}>
-        Step 3 - Choose Export Destination
+      <Typography variant="h6" component="h2" sx={{ fontWeight: 600, color: "primary.main", mb: 0.5 }}>
+        Choose a Destination
       </Typography>
-      <Typography variant="body1" paragraph>
-        Choose export format and select which data categories to include
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+        Pick which data to include, then where it should go.
       </Typography>
 
       {loginError && (
@@ -172,8 +184,8 @@ export const TabDestination = (props: Props) => {
         </Alert>
       )}
 
+      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, color: "text.primary" }}>1. Data to include</Typography>
       <Box sx={{ mb: 3, p: 2, border: "1px solid", borderColor: "grey.200", borderRadius: 2, maxWidth: 400 }}>
-        <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>Data Categories</Typography>
         <FormGroup>
           {categoryLabels.map(({ key, label, count }) => (
             <FormControlLabel
@@ -185,30 +197,17 @@ export const TabDestination = (props: Props) => {
         </FormGroup>
       </Box>
 
-      <FormControl fullWidth sx={{ mb: 3, maxWidth: 300 }}>
-        <InputLabel id="export-destination-select-label">Export Destination</InputLabel>
-        <Select
-          labelId="export-destination-select-label"
-          value={props.dataExportSource || ""}
-          label="Export Destination"
-          onChange={(e) => handleSelect(e.target.value)}
-        >
-          <MenuItem value={DataSourceType.B1_DB}>B1 Database</MenuItem>
-          <MenuItem value={DataSourceType.B1_ZIP}>B1 Export Zip</MenuItem>
-          <MenuItem value={DataSourceType.BREEZE_ZIP}>Breeze Export Zip</MenuItem>
-          <MenuItem value={DataSourceType.PLANNING_CENTER_ZIP}>Planning Center zip</MenuItem>
-          <MenuItem value={DataSourceType.TITHELY_CSV}>Tithe.ly Export Zip</MenuItem>
-          <MenuItem value={DataSourceType.CCB_CSV}>CCB / Pushpay Export Zip</MenuItem>
-        </Select>
-      </FormControl>
+      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, color: "text.primary" }}>2. Send it to</Typography>
+      <FormatSelector options={destinationFormats} value={props.dataExportSource} onSelect={handleSelect} />
 
       {props.dataExportSource && isFileDestination(props.dataExportSource) && (
-        <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end", maxWidth: 300 }}>
+        <Box sx={{ mt: 1 }}>
           <Button
             variant="contained"
             color="success"
+            size="large"
             onClick={() => handleExport(props.dataExportSource)}
-            sx={{ textTransform: "none", borderRadius: 2, fontWeight: 600, px: 4 }}
+            sx={{ px: 4 }}
           >
             Start Export
           </Button>

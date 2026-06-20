@@ -18,8 +18,11 @@ export const TabPreview = (props: Props) => {
 
   return (
     <Box>
-      <Typography variant="h6" component="h2" gutterBottom sx={{ fontWeight: 600, color: "primary.main", mb: 3 }}>
-        Step 2 - Preview
+      <Typography variant="h6" component="h2" sx={{ fontWeight: 600, color: "primary.main", mb: 0.5 }}>
+        Preview Your Data
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+        Review what was found before choosing a destination.
       </Typography>
 
       {props.isLoadingSourceData && props.dataImportSource === DataSourceType.B1_DB && (
