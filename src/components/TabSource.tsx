@@ -16,15 +16,20 @@ import { FieldMappingUI } from "./FieldMapping";
 import { FormatSelector, FormatOption } from "./FormatSelector";
 import Papa from "papaparse";
 
-const sourceFormats: FormatOption[] = [
+const primaryFormats: FormatOption[] = [
   { value: DataSourceType.B1_DB, label: "B1 Database", description: "Read directly from your hosted B1 data" },
   { value: DataSourceType.B1_ZIP, label: "B1 Import Zip", description: "B1's native backup format" },
+  { value: DataSourceType.CUSTOM_CSV, label: "Custom CSV / Excel", description: "Map your own spreadsheet columns" }
+];
+
+const otherFormats: FormatOption[] = [
   { value: DataSourceType.BREEZE_ZIP, label: "Breeze Import Zip", description: "Breeze ChMS export file" },
   { value: DataSourceType.PLANNING_CENTER_ZIP, label: "Planning Center Zip", description: "Planning Center export file" },
-  { value: DataSourceType.CUSTOM_CSV, label: "Custom CSV / Excel", description: "Map your own spreadsheet columns" },
   { value: DataSourceType.TITHELY_CSV, label: "Tithe.ly CSV", description: "Tithe.ly donations export" },
   { value: DataSourceType.CCB_CSV, label: "CCB / Pushpay CSV", description: "CCB or Pushpay export file" }
 ];
+
+const sourceFormats: FormatOption[] = [...primaryFormats, ...otherFormats];
 
 interface Props {
   dataImportSource?: string;
@@ -215,7 +220,12 @@ export const TabSource = (props: Props) => {
         </Alert>
       )}
 
-      <FormatSelector options={sourceFormats} value={props.dataImportSource} onSelect={handleImportSelection} />
+      <FormatSelector options={primaryFormats} value={props.dataImportSource} onSelect={handleImportSelection} />
+
+      <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5, mt: 1 }}>
+        Other Platforms
+      </Typography>
+      <FormatSelector options={otherFormats} value={props.dataImportSource} onSelect={handleImportSelection} />
 
       {props.dataImportSource === DataSourceType.CUSTOM_CSV && (
         <Alert severity="info" sx={{ mb: 2, maxWidth: 500 }}>
