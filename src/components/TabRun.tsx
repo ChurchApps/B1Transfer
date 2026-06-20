@@ -178,13 +178,16 @@ export const TabRun = (props: Props) => {
 
   return (
     <Box>
-      <Typography variant="h6" component="h2" gutterBottom sx={{ fontWeight: 600, color: "primary.main", mb: 3 }}>
-        Step 4 - Export Progress
+      <Typography variant="h6" component="h2" sx={{ fontWeight: 600, color: "primary.main", mb: 0.5 }}>
+        Transfer in Progress
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+        Track each step as your data is processed.
       </Typography>
 
       {!props.isExporting && (
         <Alert severity="info">
-          Export will begin once you complete the previous steps and click "Confirm" in Step 3.
+          The transfer will begin once you choose a destination on the previous step.
         </Alert>
       )}
 
