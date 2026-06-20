@@ -11,6 +11,7 @@ import { TabPreview } from "./components/TabPreview";
 import { TabDestination } from "./components/TabDestination";
 import { TabRun } from "./components/TabRun";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { undoB1DbImport, UndoEntry } from "./helpers/ExportHelpers/ExportB1DbHelper";
 
 export interface ExportCategoriesInterface {
   people: boolean;
@@ -37,7 +38,13 @@ export const Home = () => {
   const [isExporting, setIsExporting] = useState(false);
 
   const [status, setStatus] = useState<Record<string, string>>({});
+  const [undoLog, setUndoLog] = useState<UndoEntry[]>([]);
   const [activeTab, setActiveTab] = useState<string>("step1");
+
+  const handleUndo = async (onProgress?: (done: number, total: number) => void) => {
+    await undoB1DbImport(undoLog, onProgress);
+    setUndoLog([]);
+  };
 
   const [showFinalCount, setShowFinalCount] = useState<boolean>(false);
   const [exportCategories, setExportCategories] = useState<ExportCategoriesInterface>({ ...defaultCategories });
@@ -52,6 +59,7 @@ export const Home = () => {
     setDataExportSource(null);
     setIsExporting(false);
     setStatus({});
+    setUndoLog([]);
     setShowFinalCount(false);
     setExportCategories({ ...defaultCategories });
   };
@@ -120,10 +128,11 @@ export const Home = () => {
                     setShowFinalCount={setShowFinalCount}
                     exportCategories={exportCategories}
                     setExportCategories={setExportCategories}
+                    setUndoLog={setUndoLog}
                   />
                 )}
                 {activeTab === "step4" && (
-                  <TabRun dataExportSource={dataExportSource} isExporting={isExporting} status={status} />
+                  <TabRun dataExportSource={dataExportSource} isExporting={isExporting} status={status} undoCount={undoLog.length} onUndo={handleUndo} />
                 )}
               </ErrorBoundary>
             </CardContent>

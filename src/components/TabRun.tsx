@@ -1,15 +1,28 @@
-import React, { useMemo } from "react";
-import { Box, Typography, List, ListItem, ListItemIcon, ListItemText, Card, CardContent, Alert, LinearProgress } from "@mui/material";
-import { CheckCircle, RadioButtonUnchecked, Error, Loop, TaskAlt } from "@mui/icons-material";
+import React, { useMemo, useState } from "react";
+import { Box, Typography, List, ListItem, ListItemIcon, ListItemText, Card, CardContent, Alert, LinearProgress, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
+import { CheckCircle, RadioButtonUnchecked, Error, Loop, TaskAlt, Undo } from "@mui/icons-material";
 import { DataSourceType } from "../types";
 
 interface Props {
   dataExportSource: string | null;
   isExporting: boolean;
   status: Record<string, string>;
+  undoCount?: number;
+  onUndo?: (onProgress?: (done: number, total: number) => void) => Promise<void>;
 }
 
 export const TabRun = (props: Props) => {
+
+  const [confirmUndo, setConfirmUndo] = useState(false);
+  const [undoState, setUndoState] = useState<"idle" | "running" | "done">("idle");
+  const [undoProgress, setUndoProgress] = useState({ done: 0, total: 0 });
+
+  const runUndo = async () => {
+    setConfirmUndo(false);
+    setUndoState("running");
+    await props.onUndo?.((done, total) => setUndoProgress({ done, total }));
+    setUndoState("done");
+  };
 
   const getProgress = (name: string) => {
     const status = props.status[name];
@@ -169,9 +182,46 @@ export const TabRun = (props: Props) => {
                   All data has been successfully imported into your B1 database.
                 </Typography>
               )}
+
+              {props.dataExportSource === DataSourceType.B1_DB && !!props.undoCount && undoState === "idle" && (
+                <Box sx={{ mt: 3 }}>
+                  <Button variant="outlined" color="error" startIcon={<Undo />} onClick={() => setConfirmUndo(true)}>
+                    Undo Import
+                  </Button>
+                  <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 1 }}>
+                    Deletes the {props.undoCount} records this import created.
+                  </Typography>
+                </Box>
+              )}
+
+              {undoState === "running" && (
+                <Box sx={{ mt: 3, maxWidth: 360, mx: "auto" }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                    Undoing import... {undoProgress.done}/{undoProgress.total}
+                  </Typography>
+                  <LinearProgress variant="determinate" value={undoProgress.total ? Math.round((undoProgress.done / undoProgress.total) * 100) : 0} sx={{ height: 8, borderRadius: 4 }} />
+                </Box>
+              )}
+
+              {undoState === "done" && (
+                <Alert severity="success" sx={{ mt: 3 }}>Import undone. The records created by this transfer were deleted.</Alert>
+              )}
             </CardContent>
           </Card>
         )}
+
+        <Dialog open={confirmUndo} onClose={() => setConfirmUndo(false)}>
+          <DialogTitle>Undo this import?</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              This will delete the {props.undoCount} records created by this transfer. This cannot be reversed. Continue?
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setConfirmUndo(false)}>Cancel</Button>
+            <Button onClick={runUndo} color="error" variant="contained">Delete records</Button>
+          </DialogActions>
+        </Dialog>
       </>
     );
   };

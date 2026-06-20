@@ -7,7 +7,7 @@ import UserContext from "../UserContext";
 import getB1Data from "../helpers/ImportHelpers/ImportB1DbHelper";
 import generateBreezeZip from "../helpers/ExportHelpers/ExportBreezeZipHelper";
 import generateB1Zip from "../helpers/ExportHelpers/ExportB1ZipHelper";
-import exportToB1Db from "../helpers/ExportHelpers/ExportB1DbHelper";
+import exportToB1Db, { UndoEntry } from "../helpers/ExportHelpers/ExportB1DbHelper";
 import generatePlanningCenterZip from "../helpers/ExportHelpers/ExportPlanningCenterZipHelper";
 import generateTithelyZip from "../helpers/ExportHelpers/ExportTithelyHelper";
 import generateCCBZip from "../helpers/ExportHelpers/ExportCCBHelper";
@@ -35,6 +35,7 @@ interface Props {
   setShowFinalCount: (showing: boolean) => void;
   exportCategories: ExportCategoriesInterface;
   setExportCategories: (cats: ExportCategoriesInterface) => void;
+  setUndoLog: (log: UndoEntry[]) => void;
 }
 
 export const TabDestination = (props: Props) => {
@@ -110,7 +111,8 @@ export const TabDestination = (props: Props) => {
       try {
         switch (e) {
           case DataSourceType.B1_DB: {
-            await exportToB1Db(exportData, setProgress);
+            const log = await exportToB1Db(exportData, setProgress);
+            props.setUndoLog(log);
             break;
           }
           case DataSourceType.B1_ZIP: {

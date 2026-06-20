@@ -12,6 +12,11 @@ import { ApiHelper } from "..";
 const BATCH_SIZE = 1000;
 const MAX_RETRIES = 3;
 
+export interface UndoEntry { endpoint: string; apiName: any; id: string }
+
+// ponytail: module-level log of every row this run inserted; reversed = FK-safe delete order
+let undoLog: UndoEntry[] = [];
+
 const postInBatches = async <T extends { id?: string }>(
   endpoint: string,
   data: T[],
@@ -47,6 +52,7 @@ const postInBatches = async <T extends { id?: string }>(
     const mapped = Math.min(batch.length, batchResults.length);
     for (let j = 0; j < mapped; j++) {
       batch[j].id = batchResults[j].id;
+      if (batch[j].id) undoLog.push({ endpoint, apiName, id: batch[j].id as string });
       results.push(batch[j]);
     }
   }
@@ -54,8 +60,9 @@ const postInBatches = async <T extends { id?: string }>(
   return results;
 };
 
-const exportToB1Db = async (exportData: ImportDataInterface, updateProgress: (name: string, status: string) => void) => {
+const exportToB1Db = async (exportData: ImportDataInterface, updateProgress: (name: string, status: string) => void): Promise<UndoEntry[]> => {
 
+  undoLog = [];
   const sleep = (milliseconds: number) => new Promise(resolve => setTimeout(resolve, milliseconds));
 
   const runImport = async (keyName: string, code: () => void, skipComplete = false) => {
@@ -81,6 +88,21 @@ const exportToB1Db = async (exportData: ImportDataInterface, updateProgress: (na
   await exportAttendance(exportData, tmpPeople, tmpGroups, campusResult.services, campusResult.serviceTimes, runImport, updateProgress);
   await exportDonations(exportData, tmpPeople, runImport, updateProgress);
   await exportForms(exportData, tmpPeople, tmpGroups, runImport);
+  return undoLog;
+};
+
+export const undoB1DbImport = async (log: UndoEntry[], onProgress?: (done: number, total: number) => void) => {
+  // Delete in reverse insertion order so children (e.g. funddonations) go before parents (donations/funds).
+  for (let i = log.length - 1; i >= 0; i--) {
+    const { endpoint, apiName, id } = log[i];
+    try {
+      await ApiHelper.delete(`${endpoint}/${id}`, apiName);
+    } catch (e) {
+      // ponytail: tolerate already-gone rows; keep deleting the rest
+      console.error("Undo delete failed", endpoint, id, e);
+    }
+    if (onProgress) onProgress(log.length - i, log.length);
+  }
 };
 
 const exportCampuses = async (exportData: ImportDataInterface, runImport: (keyName: string, code: () => void, skipComplete?: boolean) => Promise<void>) => {
