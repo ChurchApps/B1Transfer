@@ -111,7 +111,13 @@ const exportPeople = async (exportData: ImportDataInterface, runImport: (keyName
   const tmpHouseholds: ImportHouseholdInterface[] = [...exportData.households];
 
   tmpPeople.forEach((p) => {
-    if (p.birthDate !== undefined) p.birthDate = new Date(p.birthDate).toISOString();
+    // Blank/invalid birthdates would make new Date("").toISOString() throw and abort the whole import.
+    if (p.birthDate) {
+      const d = new Date(p.birthDate);
+      p.birthDate = isNaN(d.getTime()) ? undefined : d.toISOString();
+    } else {
+      p.birthDate = undefined;
+    }
   });
 
   await runImport("Households", async () => {

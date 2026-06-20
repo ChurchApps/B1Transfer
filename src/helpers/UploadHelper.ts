@@ -87,12 +87,17 @@ export class UploadHelper {
   }
 
   static readXlsx(arrayBuffer: ArrayBuffer) {
-    const workbook = XLSX.read(arrayBuffer);
+    // cellDates so Excel date serials (e.g. 26148) become real dates instead of being
+    // read as the bare number — otherwise new Date("26148") parses it as the year 26148.
+    const workbook = XLSX.read(arrayBuffer, { cellDates: true });
     const worksheets = Object.values(workbook.Sheets);
     const data: any = {};
     const sheetNames = workbook.SheetNames;
     worksheets.forEach((sheet, i) => {
-      data[sheetNames[i]] = XLSX.utils.sheet_to_json(sheet, { header: 0 });
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 0 }) as any[];
+      // Normalize dates to ISO strings so downstream (mapping UI, CSV mapper) stays string-only.
+      rows.forEach(r => Object.keys(r).forEach(k => { if (r[k] instanceof Date) r[k] = (r[k] as Date).toISOString(); }));
+      data[sheetNames[i]] = rows;
     });
     return data;
   }
