@@ -41,8 +41,11 @@ const postInBatches = async <T extends { id?: string }>(
       }
     }
 
-    // Map the results back to the original items
-    for (let j = 0; j < batchResults.length; j++) {
+    // Map the results back to the original items. Guard against an endpoint that
+    // returns a different row count than we sent (otherwise batch[j] is undefined
+    // and one malformed response aborts the entire transfer).
+    const mapped = Math.min(batch.length, batchResults.length);
+    for (let j = 0; j < mapped; j++) {
       batch[j].id = batchResults[j].id;
       results.push(batch[j]);
     }
@@ -64,6 +67,8 @@ const exportToB1Db = async (exportData: ImportDataInterface, updateProgress: (na
         updateProgress(keyName, "complete");
       }
     } catch (e) {
+      // Surface which step failed — the UI alert is on a hidden tab once isExporting flips back off.
+      console.error(`B1 transfer step failed: ${keyName}`, e);
       if (e instanceof Error && e.message.includes("Unauthorized")) alert("Please log in to access B1 data");
       updateProgress(keyName, "error");
       throw (e);
@@ -75,7 +80,7 @@ const exportToB1Db = async (exportData: ImportDataInterface, updateProgress: (na
   const tmpGroups = await exportGroups(exportData, tmpPeople, campusResult.serviceTimes, runImport, updateProgress);
   await exportAttendance(exportData, tmpPeople, tmpGroups, campusResult.services, campusResult.serviceTimes, runImport, updateProgress);
   await exportDonations(exportData, tmpPeople, runImport, updateProgress);
-  await exportForms(exportData, tmpPeople, runImport);
+  await exportForms(exportData, tmpPeople, tmpGroups, runImport);
 };
 
 const exportCampuses = async (exportData: ImportDataInterface, runImport: (keyName: string, code: () => void, skipComplete?: boolean) => Promise<void>) => {
@@ -188,7 +193,7 @@ const exportGroups = async (
   return tmpGroups;
 };
 
-const exportForms = async (exportData: ImportDataInterface, tmpPeople: ImportPersonInterface[], runImport: (keyName: string, code: () => void) => Promise<void>) => {
+const exportForms = async (exportData: ImportDataInterface, tmpPeople: ImportPersonInterface[], tmpGroups: ImportGroupInterface[], runImport: (keyName: string, code: () => void) => Promise<void>) => {
   const tmpForms: ImportFormsInterface[] = [...exportData.forms];
   const tmpQuestions: ImportQuestionsInterface[] = [...exportData.questions];
   const tmpFormSubmissions: ImportFormSubmissions[] = [...exportData.formSubmissions];
@@ -212,16 +217,23 @@ const exportForms = async (exportData: ImportDataInterface, tmpPeople: ImportPer
 
   await runImport("Answers", async () => {
     if (tmpFormSubmissions.length > 0) {
+      const resolved: ImportFormSubmissions[] = [];
       tmpFormSubmissions.forEach(fs => {
-        const formId = ImportHelper.getByImportKey(tmpForms, fs.formKey).id;;
-        fs.formId = formId;
-        fs.contentId = ImportHelper.getByImportKey(tmpPeople, fs.personKey).id;
+        const form = ImportHelper.getByImportKey(tmpForms, fs.formKey);
+        // A submission's content is a person OR a group depending on the form type;
+        // resolve against the right collection (the column is named personKey either way).
+        const content = (fs.contentType === "group")
+          ? ImportHelper.getByImportKey(tmpGroups, fs.personKey)
+          : ImportHelper.getByImportKey(tmpPeople, fs.personKey);
+        if (!form || !content) return; // skip orphan submission instead of aborting the whole transfer
+        fs.formId = form.id;
+        fs.contentId = content.id;
 
         const fsKey = (fs as any).importKey;
         const questions: any[] = [];
         const answers: any[] = [];
         tmpQuestions.forEach(q => {
-          if (q.formId === formId) {
+          if (q.formId === form.id) {
             questions.push(q);
 
             tmpAnswers.forEach(a => {
@@ -236,8 +248,10 @@ const exportForms = async (exportData: ImportDataInterface, tmpPeople: ImportPer
         });
         fs.questions = questions;
         fs.answers = answers;
+        resolved.push(fs);
       });
-
+      tmpFormSubmissions.length = 0;
+      tmpFormSubmissions.push(...resolved);
     }
   });
   await runImport("Form Submissions", async () => {
