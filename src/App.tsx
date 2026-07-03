@@ -55,7 +55,7 @@ const theme = createTheme({
     },
     h6: {
       fontWeight: 600,
-      color: "#1565C0" // Primary color for section headings
+      color: "#1565C0"
     },
     body1: {
       color: "#333333",

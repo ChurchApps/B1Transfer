@@ -87,7 +87,6 @@ export const ImportPreview: React.FC<Props> = React.memo((props) => {
 
     const rows = [];
 
-    // Process campus-service-time-group relationships
     for (const campus of props.importData.campuses) {
       const filteredServices = ImportHelper.getServices(props.importData.services, campus.importKey);
 
@@ -116,7 +115,6 @@ export const ImportPreview: React.FC<Props> = React.memo((props) => {
       }
     }
 
-    // Process groups without service times
     for (const group of props.importData.groups) {
       const groupServiceTimes = ImportHelper.getGroupServiceTimesByGroupKey(props.importData.groupServiceTimes, group.importKey);
       if (groupServiceTimes.length === 0) {
@@ -312,7 +310,6 @@ export const ImportPreview: React.FC<Props> = React.memo((props) => {
           </Alert>
         )}
 
-        {/* Tab Navigation */}
         <Box sx={{
           borderBottom: 1,
           borderColor: "divider",
@@ -332,7 +329,6 @@ export const ImportPreview: React.FC<Props> = React.memo((props) => {
           </Tabs>
         </Box>
 
-        {/* Tab Content - Tables Only */}
         {activeTab === "people" && getPeopleTable}
         {activeTab === "groups" && getGroupsTable}
         {activeTab === "attendance" && getAttendanceTable}
@@ -342,7 +338,6 @@ export const ImportPreview: React.FC<Props> = React.memo((props) => {
     );
   }
 }, (prevProps, nextProps) =>
-  // Only re-render if the import data or triggerRender actually changes
   (
     prevProps.importData === nextProps.importData
     && prevProps.triggerRender === nextProps.triggerRender

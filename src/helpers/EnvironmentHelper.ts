@@ -42,7 +42,6 @@ export class EnvironmentHelper {
     //EnvironmentHelper.B1Url = import.meta.env.VITE_B1_URL || EnvironmentHelper.B1Url;
   };
 
-  //NOTE: None of these values are secret.
   static initStaging = () => {
     /*
     EnvironmentHelper.AttendanceApi = "https://attendanceapi.staging.churchapps.org";
@@ -53,7 +52,6 @@ export class EnvironmentHelper {
     EnvironmentHelper.B1Url = "https://app.staging.b1.church";*/
   };
 
-  //NOTE: None of these values are secret.
   static initProd = () => {
     /*
     EnvironmentHelper.AttendanceApi = "https://attendanceapi.churchapps.org";

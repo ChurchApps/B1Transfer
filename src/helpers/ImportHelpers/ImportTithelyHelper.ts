@@ -52,15 +52,12 @@ const readTithelyCsv = async (file: File): Promise<ImportDataInterface> => {
     const sheets = UploadHelper.readXlsx(buffer);
     const sheetNames = Object.keys(sheets);
 
-    // Look for people sheet first
     const peopleSheet = sheetNames.find(s => s.toLowerCase().includes("people") || s.toLowerCase().includes("member") || s.toLowerCase().includes("contact")) ?? sheetNames[0];
     if (peopleSheet) loadPeople(sheets[peopleSheet], people, households);
 
-    // Look for giving sheet
     const givingSheet = sheetNames.find(s => s.toLowerCase().includes("giving") || s.toLowerCase().includes("donation") || s.toLowerCase().includes("contribution"));
     if (givingSheet) loadDonations(sheets[givingSheet], people, batches, funds, donations, fundDonations);
 
-    // Look for groups sheet
     const groupsSheet = sheetNames.find(s => s.toLowerCase().includes("group") || s.toLowerCase().includes("tag"));
     if (groupsSheet) loadGroups(sheets[groupsSheet], groups, groupMembers);
   } else {

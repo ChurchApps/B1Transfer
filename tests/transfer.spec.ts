@@ -12,8 +12,7 @@ const ZIP_PATH = path.join(TMP, "b1-export.zip");
 
 fs.mkdirSync(TMP, { recursive: true });
 
-// Navigate to the tool. /login auto-restores the saved session from the jwt
-// cookie and redirects to "/", where the wizard (and context.user) are ready.
+// JWT cookie auto-restores session.
 async function gotoTool(page: Page) {
   await page.goto("/login");
   const churchDialog = page.locator('[role="dialog"]').filter({ hasText: "Select a Church" });
@@ -52,7 +51,6 @@ test.describe("B1Transfer data transfer", () => {
 
     await expect(page.getByRole("button", { name: "Continue to Destination" })).toBeVisible({ timeout: 60000 });
 
-    // People tab renders households; Forms tab lists the seeded forms.
     await expect(page.getByRole("tab", { name: "People" })).toBeVisible();
     await page.getByRole("tab", { name: "Forms" }).click();
     await expect(page.getByText("Visitor Information Card")).toBeVisible();
@@ -117,7 +115,6 @@ test.describe("B1Transfer data transfer", () => {
     await page.getByRole("button", { name: "Start Transfer" }).click();
 
     await expect(page.getByText(/Export Complete/)).toBeVisible({ timeout: 240000 });
-    // No step should have errored.
     await expect(page.getByText("Export Completed with Errors")).toHaveCount(0);
 
     const after = await getCounts(request);

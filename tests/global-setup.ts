@@ -6,11 +6,6 @@ import { verifyEnv } from "./setup/verify-env.mjs";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const STORAGE_STATE_PATH = path.join(__dirname, ".auth-state.json");
 
-/**
- * Verify the Api is in demo/dev mode, then log in once as demo@b1.church,
- * pick Grace Community Church, and persist the browser state so every spec
- * reuses the session instead of logging in again.
- */
 async function globalSetup(config: FullConfig) {
   await verifyEnv({ fullCheck: true });
 

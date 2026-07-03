@@ -49,7 +49,6 @@ export const TabSource = (props: Props) => {
   const [parseError, setParseError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  // Custom CSV state
   const [csvColumns, setCsvColumns] = useState<string[]>([]);
   const [csvData, setCsvData] = useState<any[]>([]);
   const [showMapping, setShowMapping] = useState(false);

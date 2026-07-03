@@ -46,9 +46,6 @@ const postInBatches = async <T extends { id?: string }>(
       }
     }
 
-    // Map the results back to the original items. Guard against an endpoint that
-    // returns a different row count than we sent (otherwise batch[j] is undefined
-    // and one malformed response aborts the entire transfer).
     const mapped = Math.min(batch.length, batchResults.length);
     for (let j = 0; j < mapped; j++) {
       batch[j].id = batchResults[j].id;
@@ -74,7 +71,6 @@ const exportToB1Db = async (exportData: ImportDataInterface, updateProgress: (na
         updateProgress(keyName, "complete");
       }
     } catch (e) {
-      // Surface which step failed — the UI alert is on a hidden tab once isExporting flips back off.
       console.error(`B1 transfer step failed: ${keyName}`, e);
       if (e instanceof Error && e.message.includes("Unauthorized")) alert("Please log in to access B1 data");
       updateProgress(keyName, "error");
@@ -167,7 +163,6 @@ const exportPeople = async (exportData: ImportDataInterface, runImport: (keyName
   }, true);
 
   await runImport("Photos", async () => {
-    // Photos are already uploaded with people
   });
 
   return tmpPeople;
@@ -238,7 +233,6 @@ const exportForms = async (exportData: ImportDataInterface, tmpPeople: ImportPer
       tmpQuestions.forEach(q => {
         q.formId = ImportHelper.getByImportKey(tmpForms, q.formKey).id;
       });
-      // Update with formId qs
       await postInBatches("/questions", tmpQuestions, "MembershipApi");
     }
   });
@@ -248,8 +242,6 @@ const exportForms = async (exportData: ImportDataInterface, tmpPeople: ImportPer
       const resolved: ImportFormSubmissions[] = [];
       tmpFormSubmissions.forEach(fs => {
         const form = ImportHelper.getByImportKey(tmpForms, fs.formKey);
-        // A submission's content is a person OR a group depending on the form type;
-        // resolve against the right collection (the column is named personKey either way).
         const content = (fs.contentType === "group")
           ? ImportHelper.getByImportKey(tmpGroups, fs.personKey)
           : ImportHelper.getByImportKey(tmpPeople, fs.personKey);
@@ -266,8 +258,6 @@ const exportForms = async (exportData: ImportDataInterface, tmpPeople: ImportPer
 
             tmpAnswers.forEach(a => {
               if (a.questionKey !== q.questionKey) return;
-              // If both sides carry a submission key, require an exact match so
-              // answers don't leak across submissions in the same form.
               if (fsKey && a.formSubmissionKey && a.formSubmissionKey !== fsKey) return;
               answers.push({ questionId: q.id, value: a.value });
             });
