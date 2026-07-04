@@ -9,6 +9,7 @@ interface Props {
   status: Record<string, string>;
   undoCount?: number;
   onUndo?: (onProgress?: (done: number, total: number) => void) => Promise<void>;
+  batchId?: string;
 }
 
 export const TabRun = (props: Props) => {
@@ -180,6 +181,12 @@ export const TabRun = (props: Props) => {
               {props.dataExportSource === DataSourceType.B1_DB && errorCount === 0 && (
                 <Typography variant="body2" color="text.secondary">
                   All data has been successfully imported into your B1 database.
+                </Typography>
+              )}
+
+              {props.dataExportSource === DataSourceType.B1_DB && props.batchId && (
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                  This import was saved as a batch and can be undone anytime from B1Admin → Settings → Batches.
                 </Typography>
               )}
 

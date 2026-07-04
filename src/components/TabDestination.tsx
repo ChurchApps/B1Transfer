@@ -36,6 +36,7 @@ interface Props {
   exportCategories: ExportCategoriesInterface;
   setExportCategories: (cats: ExportCategoriesInterface) => void;
   setUndoLog: (log: UndoEntry[]) => void;
+  setBatchId: (id?: string) => void;
 }
 
 export const TabDestination = (props: Props) => {
@@ -111,8 +112,9 @@ export const TabDestination = (props: Props) => {
       try {
         switch (e) {
           case DataSourceType.B1_DB: {
-            const log = await exportToB1Db(exportData, setProgress);
-            props.setUndoLog(log);
+            const result = await exportToB1Db(exportData, setProgress, props.dataImportSource);
+            props.setUndoLog(result.undoLog);
+            props.setBatchId(result.batchId);
             break;
           }
           case DataSourceType.B1_ZIP: {

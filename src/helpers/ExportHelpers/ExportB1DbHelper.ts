@@ -14,8 +14,35 @@ const MAX_RETRIES = 3;
 
 export interface UndoEntry { endpoint: string; apiName: any; id: string }
 
+// Endpoints the Api's audit registry marks batch-capable. Only these accept X-Batch-Id;
+// any other route 400s when the header is present, so the batch header is scoped to just these.
+const BATCH_CAPABLE = [
+  "/campuses",
+  "/people",
+  "/groups",
+  "/groupmembers",
+  "/forms",
+  "/donations",
+  "/households",
+  "/questions",
+  "/services",
+  "/servicetimes",
+  "/groupservicetimes",
+  "/funds",
+  "/donationbatches",
+  "/funddonations"
+];
+
 // ponytail: module-level log of every row this run inserted; reversed = FK-safe delete order
 let undoLog: UndoEntry[] = [];
+
+// Set only while an import is running; the request hook stamps the header on batch-capable calls.
+let activeBatchId: string | undefined;
+const batchRequestHook = (url: string, requestOptions: any) => {
+  if (activeBatchId && BATCH_CAPABLE.some(e => url.endsWith(e))) {
+    requestOptions.headers = { ...(requestOptions.headers || {}), "X-Batch-Id": activeBatchId };
+  }
+};
 
 const postInBatches = async <T extends { id?: string }>(
   endpoint: string,
@@ -57,7 +84,9 @@ const postInBatches = async <T extends { id?: string }>(
   return results;
 };
 
-const exportToB1Db = async (exportData: ImportDataInterface, updateProgress: (name: string, status: string) => void): Promise<UndoEntry[]> => {
+export interface ImportResult { undoLog: UndoEntry[]; batchId?: string }
+
+const exportToB1Db = async (exportData: ImportDataInterface, updateProgress: (name: string, status: string) => void, importSourceName?: string): Promise<ImportResult> => {
 
   undoLog = [];
   const sleep = (milliseconds: number) => new Promise(resolve => setTimeout(resolve, milliseconds));
@@ -78,13 +107,43 @@ const exportToB1Db = async (exportData: ImportDataInterface, updateProgress: (na
     }
   };
 
-  const campusResult = await exportCampuses(exportData, runImport);
-  const tmpPeople = await exportPeople(exportData, runImport, updateProgress);
-  const tmpGroups = await exportGroups(exportData, tmpPeople, campusResult.serviceTimes, runImport, updateProgress);
-  await exportAttendance(exportData, tmpPeople, tmpGroups, campusResult.services, campusResult.serviceTimes, runImport, updateProgress);
-  await exportDonations(exportData, tmpPeople, runImport, updateProgress);
-  await exportForms(exportData, tmpPeople, tmpGroups, runImport);
-  return undoLog;
+  let batchId: string | undefined;
+  try {
+    const label = `Import from ${importSourceName || "file"} ${new Date().toLocaleDateString()}`;
+    const batch = await ApiHelper.post("/batches", { label, source: "import" }, "MembershipApi");
+    batchId = batch?.id;
+  } catch (e) {
+    // Batch tracking is best-effort; a failure here must not block the import itself.
+    console.error("Could not create undo batch; import will not be undoable from B1Admin", e);
+  }
+
+  const prevOnRequest = ApiHelper.onRequest;
+  if (batchId) {
+    activeBatchId = batchId;
+    ApiHelper.onRequest = batchRequestHook;
+  }
+
+  try {
+    const campusResult = await exportCampuses(exportData, runImport);
+    const tmpPeople = await exportPeople(exportData, runImport, updateProgress);
+    const tmpGroups = await exportGroups(exportData, tmpPeople, campusResult.serviceTimes, runImport, updateProgress);
+    await exportAttendance(exportData, tmpPeople, tmpGroups, campusResult.services, campusResult.serviceTimes, runImport, updateProgress);
+    await exportDonations(exportData, tmpPeople, runImport, updateProgress);
+    await exportForms(exportData, tmpPeople, tmpGroups, runImport);
+  } finally {
+    activeBatchId = undefined;
+    ApiHelper.onRequest = prevOnRequest;
+    if (batchId) {
+      try {
+        await ApiHelper.post(`/batches/${batchId}/complete`, {}, "MembershipApi");
+        console.log(`Import recorded as batch ${batchId}. It can be undone from B1Admin Settings → Batches.`);
+      } catch (e) {
+        console.error("Could not close undo batch", batchId, e);
+      }
+    }
+  }
+
+  return { undoLog, batchId };
 };
 
 export const undoB1DbImport = async (log: UndoEntry[], onProgress?: (done: number, total: number) => void) => {

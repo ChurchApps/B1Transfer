@@ -39,6 +39,7 @@ export const Home = () => {
 
   const [status, setStatus] = useState<Record<string, string>>({});
   const [undoLog, setUndoLog] = useState<UndoEntry[]>([]);
+  const [batchId, setBatchId] = useState<string | undefined>(undefined);
   const [activeTab, setActiveTab] = useState<string>("step1");
 
   const handleUndo = async (onProgress?: (done: number, total: number) => void) => {
@@ -60,6 +61,7 @@ export const Home = () => {
     setIsExporting(false);
     setStatus({});
     setUndoLog([]);
+    setBatchId(undefined);
     setShowFinalCount(false);
     setExportCategories({ ...defaultCategories });
   };
@@ -129,10 +131,11 @@ export const Home = () => {
                     exportCategories={exportCategories}
                     setExportCategories={setExportCategories}
                     setUndoLog={setUndoLog}
+                    setBatchId={setBatchId}
                   />
                 )}
                 {activeTab === "step4" && (
-                  <TabRun dataExportSource={dataExportSource} isExporting={isExporting} status={status} undoCount={undoLog.length} onUndo={handleUndo} />
+                  <TabRun dataExportSource={dataExportSource} isExporting={isExporting} status={status} undoCount={undoLog.length} onUndo={handleUndo} batchId={batchId} />
                 )}
               </ErrorBoundary>
             </CardContent>
