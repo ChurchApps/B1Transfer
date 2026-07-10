@@ -7,23 +7,13 @@ import {
   , ImportDataInterface
   , ImportHouseholdInterface
 } from "../ImportHelper";
+import { runStep, compressZip } from "./RunStep";
 
 const generateBreezeZip = async (importData: ImportDataInterface, updateProgress: (name: string, status: string) => void) => {
 
-  const sleep = (milliseconds: number) => new Promise(resolve => setTimeout(resolve, milliseconds));
+  const runImport = (keyName: string, code: () => void) => runStep(keyName, updateProgress, code);
 
-  const runImport = async (keyName: string, code: () => void) => {
-    updateProgress(keyName, "running");
-    try {
-      await sleep(100);
-      await code();
-      updateProgress(keyName, "complete");
-    } catch (_e) {
-      updateProgress(keyName, "error");
-    }
-  };
-
-  const files = [];
+  const files: { name: string, contents: any }[] = [];
 
   exportCampuses(importData, runImport);
 
@@ -48,13 +38,8 @@ const generateBreezeZip = async (importData: ImportDataInterface, updateProgress
 
   exportForms(importData, runImport);
 
-  compressZip(files, runImport);
+  runStep("Compressing", updateProgress, () => compressZip(files, "BreezeExport.zip"));
 
-};
-const compressZip = async (files: {name: string, contents: any}[], runImport: (keyName: string, code: () => void) => Promise<void>) => {
-  await runImport("Compressing", async () => {
-    UploadHelper.zipFiles(files, "BreezeExport.zip");
-  });
 };
 const exportCampuses = async (_importData: ImportDataInterface, runImport: (keyName: string, code: () => void) => Promise<void>) => {
   const data: any[] = [];

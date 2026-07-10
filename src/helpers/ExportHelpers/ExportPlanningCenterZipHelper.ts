@@ -1,22 +1,11 @@
-import { UploadHelper } from "..";
 import { ImportDataInterface, ImportHouseholdInterface } from "../ImportHelper";
 import Papa from "papaparse";
+import { runStep, compressZip } from "./RunStep";
 
 const generatePlanningCenterZip = async (importData: ImportDataInterface, updateProgress: (name: string, status: string) => void) => {
   const files: { name: string, contents: any }[] = [];
 
-  const sleep = (milliseconds: number) => new Promise(resolve => setTimeout(resolve, milliseconds));
-
-  const runImport = async (keyName: string, code: () => void) => {
-    updateProgress(keyName, "running");
-    try {
-      await sleep(100);
-      await code();
-      updateProgress(keyName, "complete");
-    } catch (_e) {
-      updateProgress(keyName, "error");
-    }
-  };
+  const runImport = (keyName: string, code: () => void) => runStep(keyName, updateProgress, code);
 
   exportCampuses(importData, runImport);
 
@@ -40,7 +29,7 @@ const generatePlanningCenterZip = async (importData: ImportDataInterface, update
 
   exportAnswers(importData, runImport);
 
-  compressZip(files, runImport);
+  runStep("Compressing", updateProgress, () => compressZip(files, "PlanningCenterExport.zip"));
 };
 
 const exportCampuses = async (_importData : ImportDataInterface, runImport: (keyName: string, code: () => void) => Promise<void>) => {
@@ -50,12 +39,6 @@ const exportCampuses = async (_importData : ImportDataInterface, runImport: (key
 
 const exportGroupMembers = async (_importData : ImportDataInterface, runImport: (keyName: string, code: () => void) => Promise<void>) => {
   await runImport("Group Members", async () => {
-  });
-};
-
-const compressZip = async (files: {name: string, contents: any}[], runImport: (keyName: string, code: () => void) => Promise<void>) => {
-  await runImport("Compressing", async () => {
-    UploadHelper.zipFiles(files, "PlanningCenterExport.zip");
   });
 };
 

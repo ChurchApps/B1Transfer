@@ -6,21 +6,11 @@ import {
   , ImportHouseholdInterface
 } from "../ImportHelper";
 import Papa from "papaparse";
+import { runStep } from "./RunStep";
 
 const generateTithelyZip = async (importData: ImportDataInterface, updateProgress: (name: string, status: string) => void) => {
 
-  const sleep = (milliseconds: number) => new Promise(resolve => setTimeout(resolve, milliseconds));
-
-  const runImport = async (keyName: string, code: () => void) => {
-    updateProgress(keyName, "running");
-    try {
-      await sleep(100);
-      await code();
-      updateProgress(keyName, "complete");
-    } catch (_e) {
-      updateProgress(keyName, "error");
-    }
-  };
+  const runImport = (keyName: string, code: () => void) => runStep(keyName, updateProgress, code);
 
   const files: { name: string, contents: string | Buffer }[] = [];
 

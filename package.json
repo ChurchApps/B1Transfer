@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@churchapps/apphelper": "^0.20.0",
+    "@churchapps/apphelper": "^0.22.0",
     "@churchapps/helpers": "^1.10.1",
     "@mui/icons-material": "^7.3.11",
     "@mui/material": "^7.3.11",
@@ -24,7 +24,7 @@
     "react-dom": "^19.1.0",
     "react-ga4": "^2.1.0",
     "react-router-dom": "^7.15.0",
-    "xlsx": "^0.18.5"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "scripts": {
     "preinstall": "node -e \"if(!(process.env.npm_config_user_agent||'').startsWith('yarn')){console.error('\\n[B1Transfer] This project uses Yarn (Berry). Run \\'yarn install\\' instead of npm/pnpm.\\n');process.exit(1)}\"",
@@ -59,7 +59,6 @@
     "@playwright/test": "^1.59.1",
     "@types/file-saver": "^2.0.7",
     "@types/node": "^22.15.5",
-    "@types/xlsx": "^0.0.36",
     "@typescript-eslint/eslint-plugin": "^8.55.0",
     "@typescript-eslint/parser": "^8.55.0",
     "@vitejs/plugin-react": "^4.3.4",

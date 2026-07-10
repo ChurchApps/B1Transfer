@@ -8,6 +8,7 @@ import {
   , ImportQuestionsInterface, ImportFormSubmissions, ImportAnswerInterface
 } from "../ImportHelper";
 import { ApiHelper } from "..";
+import { runStep } from "./RunStep";
 
 const BATCH_SIZE = 1000;
 const MAX_RETRIES = 3;
@@ -89,23 +90,8 @@ export interface ImportResult { undoLog: UndoEntry[]; batchId?: string }
 const exportToB1Db = async (exportData: ImportDataInterface, updateProgress: (name: string, status: string) => void, importSourceName?: string): Promise<ImportResult> => {
 
   undoLog = [];
-  const sleep = (milliseconds: number) => new Promise(resolve => setTimeout(resolve, milliseconds));
 
-  const runImport = async (keyName: string, code: () => void, skipComplete = false) => {
-    updateProgress(keyName, "running");
-    try {
-      await sleep(100);
-      await code();
-      if (!skipComplete) {
-        updateProgress(keyName, "complete");
-      }
-    } catch (e) {
-      console.error(`B1 transfer step failed: ${keyName}`, e);
-      if (e instanceof Error && e.message.includes("Unauthorized")) alert("Please log in to access B1 data");
-      updateProgress(keyName, "error");
-      throw (e);
-    }
-  };
+  const runImport = (keyName: string, code: () => void, skipComplete = false) => runStep(keyName, updateProgress, code, skipComplete);
 
   let batchId: string | undefined;
   try {

@@ -10,22 +10,12 @@ import {
   , ImportHouseholdInterface
 } from "../ImportHelper";
 import Papa from "papaparse";
+import { runStep, compressZip } from "./RunStep";
 
 const generateB1Zip = async (importData: ImportDataInterface, updateProgress: (name: string, status: string) => void) => {
-  const files = [];
+  const files: { name: string, contents: any }[] = [];
 
-  const sleep = (milliseconds: number) => new Promise(resolve => setTimeout(resolve, milliseconds));
-
-  const runImport = async (keyName: string, code: () => Promise<void>) => {
-    updateProgress(keyName, "running");
-    try {
-      await sleep(100);
-      await code();
-      updateProgress(keyName, "complete");
-    } catch (_e) {
-      updateProgress(keyName, "error");
-    }
-  };
+  const runImport = (keyName: string, code: () => Promise<void>) => runStep(keyName, updateProgress, code);
 
   files.push({ name: "services.csv", contents: await exportCampuses(importData, runImport) });
 
@@ -49,7 +39,7 @@ const generateB1Zip = async (importData: ImportDataInterface, updateProgress: (n
 
   files.push({ name: "answers.csv", contents: await exportAnswers(importData, runImport) });
 
-  compressZip(files, runImport);
+  runStep("Compressing", updateProgress, () => compressZip(files, "B1Export.zip"));
 
 };
 const exportCampuses = async (importData: ImportDataInterface, runImport: (keyName: string, code: () => Promise<void>) => Promise<void>) => {
@@ -76,12 +66,6 @@ const exportGroupMembers = async (importData: ImportDataInterface, runImport: (k
     });
   });
   return Papa.unparse(data);
-};
-
-const compressZip = async (files: { name: string, contents: any }[], runImport: (keyName: string, code: () => Promise<void>) => Promise<void>) => {
-  await runImport("Compressing", async () => {
-    UploadHelper.zipFiles(files, "B1Export.zip");
-  });
 };
 
 const exportPeople = async (importData: ImportDataInterface, runImport: (keyName: string, code: () => Promise<void>) => Promise<void>) => {

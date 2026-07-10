@@ -64,7 +64,7 @@ const KNOWN_PEOPLE_COLUMNS = new Set<string>([
 const readB1Zip = async (file: File): Promise<ImportDataInterface> => {
   const zip = await JSZip.loadAsync(file);
 
-  zip.files["people.csv"] && loadPeople(UploadHelper.readCsvString(await zip.file("people.csv").async("string")), zip);
+  if (zip.files["people.csv"]) await loadPeople(UploadHelper.readCsvString(await zip.file("people.csv").async("string")), zip);
   const tmpServiceTimes = zip.files["services.csv"] && loadServiceTimes(UploadHelper.readCsvString(await zip.file("services.csv").async("string")));
   zip.files["groups.csv"] && loadGroups(UploadHelper.readCsvString(await zip.file("groups.csv").async("string")));
   zip.files["groupmembers.csv"] && loadGroupMembers(UploadHelper.readCsvString(await zip.file("groupmembers.csv").async("string")));
@@ -223,10 +223,11 @@ const loadGroupMembers = (data: any) => {
   for (let i = 0; i < data.length; i++) if (data[i].groupKey !== undefined) groupMembers.push(data[i] as ImportGroupMemberInterface);
 };
 
-const loadPeople = (data: any, zip: any) => {
+const loadPeople = async (data: any, zip: any) => {
   people = [];
   households = [];
   acceptedPeopleRows = [];
+  const photoPromises: Promise<void>[] = [];
   for (let i = 0; i < data.length; i++) {
     if (data[i].lastName !== undefined) {
       const rawRow = { ...data[i] };
@@ -236,16 +237,22 @@ const loadPeople = (data: any, zip: any) => {
       if (data[i].householdRole) p.householdRole = data[i].householdRole;
       assignHousehold(households, data[i]);
       if (p.photo !== undefined) {
-        zip?.file(p.photo)?.async("base64").then((data: any) => {
-          if (data) {
-            p.photo = "data:image/png;base64," + data;
-          }
-        });
+        const photoFile = zip?.file(p.photo);
+        if (photoFile) {
+          photoPromises.push(
+            photoFile.async("base64").then((base64: string) => {
+              if (base64) p.photo = "data:image/png;base64," + base64;
+            }).catch((e: unknown) => {
+              console.error(`Failed to load photo ${p.photo}`, e);
+            })
+          );
+        }
       }
       people.push(p);
       acceptedPeopleRows.push(rawRow);
     }
   }
+  await Promise.all(photoPromises);
   return people;
 };
 
