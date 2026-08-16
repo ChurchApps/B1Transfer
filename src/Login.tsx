@@ -5,7 +5,7 @@ import UserContext from "./UserContext";
 import { LoginPage } from "@churchapps/apphelper/login";
 import { ChurchInterface, UserInterface } from "@churchapps/apphelper";
 import ReactGA from "react-ga4";
-import { EnvironmentHelper } from "./helpers";
+import { EnvironmentHelper, resolveSsoJwt } from "./helpers";
 import { Box } from "@mui/material";
 
 export const Login: React.FC = () => {
@@ -17,6 +17,8 @@ export const Login: React.FC = () => {
 
   const search = new URLSearchParams(window.location.search);
   const returnUrl = search.get("returnUrl") || location.state?.from?.pathname || "/";
+  const jwt = resolveSsoJwt(cookies.jwt);
+  const auth = search.get("auth") || "";
 
   const handleRedirect = (url: string) => {
     navigate(url);
@@ -29,11 +31,6 @@ export const Login: React.FC = () => {
   const trackUserRegister = async (_user: UserInterface) => {
     if (EnvironmentHelper.Common.GoogleAnalyticsTag !== "") ReactGA.event({ category: "User", action: "Register" });
   };
-
-  let jwt = search.get("jwt") || cookies.jwt;
-  let auth = search.get("auth");
-  if (!jwt) jwt = "";
-  if (!auth) auth = "";
 
   return (
     <Box
