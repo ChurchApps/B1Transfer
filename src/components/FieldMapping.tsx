@@ -60,6 +60,10 @@ const autoDetectMapping = (column: string): string => {
     "birthday": "birthDate",
     "dob": "birthDate",
     "date of birth": "birthDate",
+    "anniversary": "anniversary",
+    "anniversary date": "anniversary",
+    "wedding anniversary": "anniversary",
+    "wedding date": "anniversary",
     "gender": "gender",
     "sex": "gender",
     "marital status": "maritalStatus",
@@ -93,7 +97,16 @@ export const FieldMappingUI: React.FC<Props> = ({ columns, sampleData, onConfirm
 
   const handleChange = (index: number, value: string) => {
     const updated = [...mappings];
-    updated[index] = { ...updated[index], targetField: value };
+    const current = updated[index];
+    // Default the custom field name to the column header, which usually matches the B1 field name.
+    const customFieldName = value === "personField" ? (current.customFieldName ?? current.sourceColumn) : current.customFieldName;
+    updated[index] = { ...current, targetField: value, customFieldName };
+    setMappings(updated);
+  };
+
+  const handleCustomFieldNameChange = (index: number, value: string) => {
+    const updated = [...mappings];
+    updated[index] = { ...updated[index], customFieldName: value };
     setMappings(updated);
   };
 
@@ -101,6 +114,8 @@ export const FieldMappingUI: React.FC<Props> = ({ columns, sampleData, onConfirm
   const hasName = mappings.some(m => m.targetField === "name.first" || m.targetField === "name.last");
   const hasFormAnswers = mappings.some(m => m.targetField === "formAnswer");
   const formNameValid = !hasFormAnswers || formName.trim().length > 0;
+  const hasPersonFields = mappings.some(m => m.targetField === "personField");
+  const personFieldsValid = mappings.every(m => m.targetField !== "personField" || !!m.customFieldName?.trim());
 
   return (
     <Box>
@@ -132,6 +147,13 @@ export const FieldMappingUI: React.FC<Props> = ({ columns, sampleData, onConfirm
             helperText={!formNameValid ? "Form name is required" : ""}
           />
         </Box>
+      )}
+
+      {hasPersonFields && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          Columns mapped to <strong>Custom Field</strong> are matched by name to your church's custom fields in B1 when you upload.
+          Enter each field's name exactly as it appears in B1 (capitalization doesn't matter). Fields or values that can't be matched are skipped and listed when the import finishes.
+        </Alert>
       )}
 
       <TableContainer sx={{ maxHeight: 400, mb: 2 }}>
@@ -169,6 +191,17 @@ export const FieldMappingUI: React.FC<Props> = ({ columns, sampleData, onConfirm
                       <MenuItem key={f.value} value={f.value}>{f.label}</MenuItem>
                     ))}
                   </Select>
+                  {mapping.targetField === "personField" && (
+                    <TextField
+                      size="small"
+                      label="B1 field name"
+                      value={mapping.customFieldName ?? ""}
+                      onChange={(e) => handleCustomFieldNameChange(i, e.target.value)}
+                      error={!mapping.customFieldName?.trim()}
+                      helperText={!mapping.customFieldName?.trim() ? "Field name is required" : ""}
+                      sx={{ ml: 1, minWidth: 180 }}
+                    />
+                  )}
                 </TableCell>
               </TableRow>
             ))}
@@ -178,7 +211,7 @@ export const FieldMappingUI: React.FC<Props> = ({ columns, sampleData, onConfirm
 
       <Button
         variant="contained"
-        disabled={!hasName || !formNameValid}
+        disabled={!hasName || !formNameValid || !personFieldsValid}
         onClick={() => onConfirm(mappings, formName.trim())}
         sx={{ textTransform: "none", borderRadius: 2, fontWeight: 600, px: 4 }}
       >
