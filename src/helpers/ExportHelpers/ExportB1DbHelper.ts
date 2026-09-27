@@ -11,6 +11,8 @@ import { ApiHelper } from "..";
 import { runStep } from "./RunStep";
 
 const BATCH_SIZE = 1000;
+// The Api upserts custom field values one row at a time, so keep these requests smaller.
+const PERSON_FIELD_BATCH_SIZE = 200;
 const MAX_RETRIES = 3;
 
 export interface UndoEntry { endpoint: string; apiName: any; id: string }
@@ -112,6 +114,7 @@ const exportToB1Db = async (exportData: ImportDataInterface, updateProgress: (na
   try {
     const campusResult = await exportCampuses(exportData, runImport);
     const tmpPeople = await exportPeople(exportData, runImport, updateProgress);
+    await exportPersonFieldValues(exportData, tmpPeople, runImport, updateProgress);
     const tmpGroups = await exportGroups(exportData, tmpPeople, campusResult.serviceTimes, runImport, updateProgress);
     await exportAttendance(exportData, tmpPeople, tmpGroups, campusResult.services, campusResult.serviceTimes, runImport, updateProgress);
     await exportDonations(exportData, tmpPeople, runImport, updateProgress);
@@ -213,6 +216,49 @@ const exportPeople = async (exportData: ImportDataInterface, runImport: (keyName
   });
 
   return tmpPeople;
+};
+
+// Custom field targets are typed by name on the Source tab, before login, so they're matched
+// to the church's /personfields here. Unmatched names and values that don't fit the field's
+// type are skipped and summarized in the step status instead of failing the import.
+const exportPersonFieldValues = async (
+  exportData: ImportDataInterface,
+  tmpPeople: ImportPersonInterface[],
+  runImport: (keyName: string, code: () => void, skipComplete?: boolean) => Promise<void>,
+  updateProgress: (name: string, status: string) => void
+) => {
+  const values = exportData.personFieldValues || [];
+  await runImport("Custom Fields", async () => {
+    if (values.length === 0) {
+      updateProgress("Custom Fields", "complete");
+      return;
+    }
+    const fields: { id?: string, name?: string, fieldType?: string, choices?: string | null }[] = (await ApiHelper.get("/personfields", "MembershipApi")) || [];
+    const fieldsByName = new Map(fields.map(f => [(f.name || "").trim().toLowerCase(), f]));
+    const personIds = new Map(tmpPeople.map(p => [p.importKey, p.id]));
+
+    const rows: { personId: string, fieldId: string, value: string }[] = [];
+    const unmatched = new Set<string>();
+    let invalidCount = 0;
+    for (const v of values) {
+      const field = fieldsByName.get(v.fieldName.toLowerCase());
+      if (!field?.id) { unmatched.add(v.fieldName); continue; }
+      const personId = personIds.get(v.personKey);
+      if (!personId) continue;
+      const value = ImportHelper.toPersonFieldValue(field, v.value);
+      if (value === undefined) { invalidCount++; continue; }
+      rows.push({ personId, fieldId: field.id, value });
+    }
+
+    for (let i = 0; i < rows.length; i += PERSON_FIELD_BATCH_SIZE) {
+      await ApiHelper.post("/personfieldvalues", rows.slice(i, i + PERSON_FIELD_BATCH_SIZE), "MembershipApi");
+    }
+
+    const skipped: string[] = [];
+    if (unmatched.size > 0) skipped.push(`no B1 field named ${[...unmatched].map(n => `"${n}"`).join(", ")}`);
+    if (invalidCount > 0) skipped.push(`${invalidCount} value(s) didn't fit the field type`);
+    updateProgress("Custom Fields", skipped.length > 0 ? `complete (${rows.length} saved; skipped: ${skipped.join("; ")})` : "complete");
+  }, true);
 };
 
 const exportGroups = async (

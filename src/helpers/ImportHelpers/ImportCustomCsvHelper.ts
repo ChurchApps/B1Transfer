@@ -1,7 +1,7 @@
 import {
   ImportPersonInterface, ImportHouseholdInterface,
   ImportDataInterface, ImportFormsInterface, ImportQuestionsInterface,
-  ImportFormSubmissions, ImportAnswerInterface
+  ImportFormSubmissions, ImportAnswerInterface, ImportPersonFieldValueInterface
 } from "../ImportHelper";
 import { ContactInfoInterface, NameInterface } from "..";
 import { FieldMapping } from "../../types";
@@ -26,6 +26,7 @@ const readCustomCsv = (data: any[], mappings: FieldMapping[], formName: string =
   const activeMappings = mappings.filter(m => m.targetField !== "");
   const hasGroupMapping = activeMappings.some(m => m.targetField === "groupName");
   const formAnswerMappings = activeMappings.filter(m => m.targetField === "formAnswer");
+  const personFieldMappings = activeMappings.filter(m => m.targetField === "personField" && m.customFieldName?.trim());
 
   const groupMap = new Map<string, string>();
   const groups: any[] = [];
@@ -35,6 +36,7 @@ const readCustomCsv = (data: any[], mappings: FieldMapping[], formName: string =
   const questions: ImportQuestionsInterface[] = [];
   const formSubmissions: ImportFormSubmissions[] = [];
   const answers: ImportAnswerInterface[] = [];
+  const personFieldValues: ImportPersonFieldValueInterface[] = [];
 
   const FORM_KEY = "1";
   if (formAnswerMappings.length > 0) {
@@ -68,7 +70,7 @@ const readCustomCsv = (data: any[], mappings: FieldMapping[], formName: string =
         groupName = value;
       } else if (mapping.targetField === "householdName") {
         householdName = value;
-      } else if (mapping.targetField === "formAnswer") {
+      } else if (mapping.targetField === "formAnswer" || mapping.targetField === "personField") {
         // handled below
       } else {
         setNestedField(person, mapping.targetField, value);
@@ -100,6 +102,11 @@ const readCustomCsv = (data: any[], mappings: FieldMapping[], formName: string =
         groups.push({ importKey: gKey, name: groupName, id: gKey, trackAttendance: false, parentPickup: false });
       }
       groupMembers.push({ groupKey: groupMap.get(groupName), personKey: person.importKey, groupId: groupMap.get(groupName), personId: person.importKey });
+    }
+
+    for (const m of personFieldMappings) {
+      const value = getNestedValue(row, m.sourceColumn).trim();
+      if (value !== "") personFieldValues.push({ personKey: person.importKey, fieldName: m.customFieldName!.trim(), value });
     }
 
     // Form submission + answers
@@ -148,7 +155,8 @@ const readCustomCsv = (data: any[], mappings: FieldMapping[], formName: string =
     forms,
     questions,
     formSubmissions,
-    answers
+    answers,
+    personFieldValues
   } as ImportDataInterface;
 };
 

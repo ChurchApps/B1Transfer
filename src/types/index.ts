@@ -11,6 +11,7 @@ export enum DataSourceType {
 export interface FieldMapping {
   sourceColumn: string;
   targetField: string;
+  customFieldName?: string;
 }
 
 export const B1_PEOPLE_FIELDS = [
@@ -38,5 +39,6 @@ export const B1_PEOPLE_FIELDS = [
   { value: "membershipStatus", label: "Membership Status" },
   { value: "householdName", label: "Household/Family Name" },
   { value: "groupName", label: "Group Name" },
+  { value: "personField", label: "Custom Field (match by name)" },
   { value: "formAnswer", label: "Form Answer (custom field)" }
 ] as const;

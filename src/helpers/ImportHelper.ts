@@ -24,6 +24,8 @@ export interface ImportFormsInterface extends FormInterface { importKey: string 
 export interface ImportQuestionsInterface extends QuestionInterface { formKey: string, questionKey: string }
 export interface ImportFormSubmissions extends FormSubmissionInterface { formKey: string, personKey: string }
 export interface ImportAnswerInterface extends AnswerInterface { questionKey: string, formSubmissionKey: string }
+// Custom person field value keyed by field name; resolved to a B1 fieldId at upload, after login.
+export interface ImportPersonFieldValueInterface { personKey: string, fieldName: string, value: string }
 
 export interface ImportDataInterface {
     people: ImportPersonInterface[],
@@ -45,6 +47,7 @@ export interface ImportDataInterface {
     questions: ImportQuestionsInterface[]
     formSubmissions: ImportFormSubmissions[]
     answers: ImportAnswerInterface[]
+    personFieldValues?: ImportPersonFieldValueInterface[]
 }
 
 export class ImportHelper {
@@ -65,6 +68,35 @@ export class ImportHelper {
     if (iso && (d.getMonth() !== +iso[2] - 1 || d.getDate() !== +iso[3])) return undefined;
     // Local date parts, not toISOString(): converting local midnight to UTC shifts the day east of UTC.
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+
+  // Converts a CSV value to what B1Admin stores for the custom field's type (matching B1Admin's
+  // PersonFieldHelper). Returns undefined when the value doesn't fit the type, so it gets skipped.
+  static toPersonFieldValue(field: { fieldType?: string, choices?: string | null }, raw: string) {
+    const text = raw.trim();
+    switch (field.fieldType) {
+      case "Date": return this.toDateOnly(text);
+      case "Yes/No": {
+        const t = text.toLowerCase();
+        if (["yes", "y", "true", "1"].includes(t)) return "True";
+        if (["no", "n", "false", "0"].includes(t)) return "False";
+        return undefined;
+      }
+      case "Whole Number":
+      case "Decimal": {
+        const n = Number(text.replace(/,/g, ""));
+        if (text === "" || !Number.isFinite(n) || (field.fieldType === "Whole Number" && !Number.isInteger(n))) return undefined;
+        return n.toString();
+      }
+      case "Multiple Choice": {
+        let choices: { value?: string, text?: string }[] = [];
+        try { choices = JSON.parse(field.choices || "[]"); } catch { choices = []; }
+        if (!Array.isArray(choices)) choices = [];
+        const t = text.toLowerCase();
+        return choices.find(c => c.text?.toLowerCase() === t || c.value?.toLowerCase() === t)?.value;
+      }
+      default: return text || undefined;
+    }
   }
 
   //get all

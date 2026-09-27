@@ -13,6 +13,9 @@ interface Props {
   batchId?: string;
 }
 
+// A step can finish as "complete" or "complete (detail)" when it has something to report.
+const isComplete = (status?: string) => status === "complete" || !!status?.startsWith("complete (");
+
 export const TabRun = (props: Props) => {
 
   const [confirmUndo, setConfirmUndo] = useState(false);
@@ -46,6 +49,12 @@ export const TabRun = (props: Props) => {
     } else if (status === "complete") {
       icon = <CheckCircle sx={{ color: "success.main" }} />;
       color = "success.main";
+    } else if (isComplete(status)) {
+      // Finished, but with something the user should know about, e.g. skipped custom field values
+      icon = <CheckCircle sx={{ color: "warning.main" }} />;
+      color = "warning.dark";
+      const match = status.match(/\((.+)\)/);
+      if (match) detail = match[1];
     } else {
       icon = <RadioButtonUnchecked sx={{ color: "grey.400" }} />;
     }
@@ -74,6 +83,7 @@ export const TabRun = (props: Props) => {
         "Campuses/Services/Times",
         "Households",
         "People",
+        "Custom Fields",
         "Photos",
         "Groups",
         "Group Service Times",
@@ -109,14 +119,14 @@ export const TabRun = (props: Props) => {
     let errors = 0;
     for (const step of steps) {
       const s = props.status[step];
-      if (s === "complete") completed++;
+      if (isComplete(s)) completed++;
       else if (s === "error") errors++;
     }
     const allDone = props.exportError
       ? true
       : steps.every(step => {
         const s = props.status[step];
-        return s === "complete" || s === "error";
+        return isComplete(s) || s === "error";
       });
     return { completedCount: completed, errorCount: errors, isAllDone: allDone };
   }, [props.status, props.exportError, steps]);
