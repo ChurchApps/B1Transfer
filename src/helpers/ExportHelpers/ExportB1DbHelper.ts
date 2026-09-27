@@ -181,6 +181,8 @@ const exportPeople = async (exportData: ImportDataInterface, runImport: (keyName
     } else {
       p.birthDate = undefined;
     }
+    // The Api keeps anniversary only when it's YYYY-MM-DD, so "9/17/1994" would otherwise save as blank.
+    p.anniversary = ImportHelper.toDateOnly(p.anniversary);
   });
 
   await runImport("Households", async () => {

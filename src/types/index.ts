@@ -32,6 +32,7 @@ export const B1_PEOPLE_FIELDS = [
   { value: "contactInfo.state", label: "State" },
   { value: "contactInfo.zip", label: "Zip Code" },
   { value: "birthDate", label: "Birth Date" },
+  { value: "anniversary", label: "Anniversary" },
   { value: "gender", label: "Gender" },
   { value: "maritalStatus", label: "Marital Status" },
   { value: "membershipStatus", label: "Membership Status" },

@@ -54,6 +54,19 @@ export class ImportHelper {
   static getByImportKey(items: any[], importKey: string) { return ArrayHelper.getOne(items, "importKey", importKey); }
   static getById(items: any[], id: string) { return ArrayHelper.getOne(items, "id", id); }
 
+  // Normalizes a typed date ("9/17/1994", "1994-09-17", "Sep 17, 1994") to the YYYY-MM-DD form
+  // the Api stores for date-only fields. Returns undefined for blank or unparseable input.
+  static toDateOnly(value: string | Date | undefined | null) {
+    const text = value?.toString().trim();
+    if (!text) return undefined;
+    const iso = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    const d = iso ? new Date(+iso[1], +iso[2] - 1, +iso[3]) : new Date(text);
+    if (isNaN(d.getTime())) return undefined;
+    if (iso && (d.getMonth() !== +iso[2] - 1 || d.getDate() !== +iso[3])) return undefined;
+    // Local date parts, not toISOString(): converting local midnight to UTC shifts the day east of UTC.
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+
   //get all
   static getVisitSessions(visitSessions: ImportVisitSessionInterface[], sessionKey: string) { return ArrayHelper.getAll(visitSessions, "sessionKey", sessionKey) as ImportServiceTimeInterface[]; }
   static getGroupServiceTimesByGroupKey(groupServiceTimes: ImportGroupServiceTimeInterface[], groupKey: string) { return ArrayHelper.getAll(groupServiceTimes, "groupKey", groupKey) as ImportGroupServiceTimeInterface[]; }
