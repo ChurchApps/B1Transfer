@@ -134,6 +134,8 @@ export const TabRun = (props: Props) => {
   const progressPercent = steps.length > 0 ? Math.round((completedCount / steps.length) * 100) : 0;
   // A fatal error can abort before any step is marked "error", so errorCount alone can be 0 on a failed run.
   const hasError = errorCount > 0 || !!props.exportError;
+  // Writing into the B1 database is an import from the user's point of view.
+  const verb = props.dataExportSource === DataSourceType.B1_DB ? "Import" : "Export";
 
   const getExportSteps = () => {
     if (!props.isExporting) return null;
@@ -146,13 +148,13 @@ export const TabRun = (props: Props) => {
         <Card sx={{ mt: 3 }}>
           <CardContent>
             <Typography variant="h6" gutterBottom color="primary" sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-              Export Progress
+              {verb} Progress
             </Typography>
 
             <Box sx={{ mb: 2 }}>
               <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
                 <Typography variant="body2" color="text.secondary">
-                  {isAllDone ? (hasError ? "Export finished with errors" : "Export complete") : "Exporting content..."}
+                  {isAllDone ? (hasError ? `${verb} finished with errors` : `${verb} complete`) : `${verb}ing content...`}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   {completedCount}/{steps.length} steps ({progressPercent}%)
@@ -182,7 +184,7 @@ export const TabRun = (props: Props) => {
             <CardContent sx={{ textAlign: "center", py: 4 }}>
               <TaskAlt sx={{ fontSize: 56, color: hasError ? "warning.main" : "success.main", mb: 2 }} />
               <Typography variant="h5" gutterBottom sx={{ fontWeight: 600 }}>
-                {hasError ? "Export Completed with Errors" : "Export Complete!"}
+                {hasError ? `${verb} Completed with Errors` : `${verb} Complete!`}
               </Typography>
               <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
                 {completedCount} of {steps.length} steps completed successfully

@@ -114,8 +114,8 @@ test.describe("B1Transfer data transfer", () => {
     await selectDestination(page, "B1 Database");
     await page.getByRole("button", { name: "Start Transfer" }).click();
 
-    await expect(page.getByText(/Export Complete/)).toBeVisible({ timeout: 240000 });
-    await expect(page.getByText("Export Completed with Errors")).toHaveCount(0);
+    await expect(page.getByText(/Import Complete/)).toBeVisible({ timeout: 240000 });
+    await expect(page.getByText("Import Completed with Errors")).toHaveCount(0);
 
     const after = await getCounts(request);
     // Clean 1:1 categories must have grown by exactly the imported count.
