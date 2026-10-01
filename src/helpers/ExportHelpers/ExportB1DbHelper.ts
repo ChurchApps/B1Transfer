@@ -87,7 +87,7 @@ const postInBatches = async <T extends { id?: string }>(
   return results;
 };
 
-export interface ImportResult { undoLog: UndoEntry[]; batchId?: string }
+interface ImportResult { undoLog: UndoEntry[]; batchId?: string }
 
 const exportToB1Db = async (exportData: ImportDataInterface, updateProgress: (name: string, status: string) => void, importSourceName?: string): Promise<ImportResult> => {
 
