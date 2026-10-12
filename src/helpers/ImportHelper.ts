@@ -70,6 +70,15 @@ export class ImportHelper {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   }
 
+  // Maps a source's family role ("Head of Household", "Primary", "Son", ...) to B1's Head/Spouse/Child/Other.
+  static toHouseholdRole(raw?: string) {
+    const role = raw?.toString().trim().toLowerCase() ?? "";
+    if (["head", "head of household", "primary", "primary contact"].includes(role)) return "Head";
+    if (["spouse", "wife", "husband"].includes(role)) return "Spouse";
+    if (["child", "son", "daughter", "dependent"].includes(role)) return "Child";
+    return "Other";
+  }
+
   // Converts a CSV value to what B1Admin stores for the custom field's type (matching B1Admin's
   // PersonFieldHelper). Returns undefined when the value doesn't fit the type, so it gets skipped.
   static toPersonFieldValue(field: { fieldType?: string, choices?: string | null }, raw: string) {
