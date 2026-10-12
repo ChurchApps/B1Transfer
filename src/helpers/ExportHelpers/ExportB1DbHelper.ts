@@ -198,7 +198,7 @@ const exportPeople = async (exportData: ImportDataInterface, runImport: (keyName
     if (tmpPeople.length > 0) {
       tmpPeople.forEach((p) => {
         p.householdId = ImportHelper.getByImportKey(tmpHouseholds, p.householdKey).id;
-        p.householdRole = "Other";
+        p.householdRole = ImportHelper.toHouseholdRole(p.householdRole);
       });
       await postInBatches("/people", tmpPeople, "MembershipApi", (current, total, isComplete) => {
         if (isComplete) {
