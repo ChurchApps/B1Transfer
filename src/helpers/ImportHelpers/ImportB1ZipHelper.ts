@@ -8,6 +8,7 @@ import {
   , ImportFundDonationInterface, ImportDataInterface, ImportFormsInterface
   , ImportQuestionsInterface, ImportFormSubmissions, ImportAnswerInterface
   , ImportPersonFieldInterface, ImportPersonFieldValueInterface
+  , ImportHouseholdPickupInterface, ImportListInterface
 } from "../ImportHelper";
 import JSZip from "jszip";
 
@@ -32,6 +33,8 @@ let formSubmissions: ImportFormSubmissions[] = [];
 let answers: ImportAnswerInterface[] = [];
 let personFields: ImportPersonFieldInterface[] = [];
 let personFieldValues: ImportPersonFieldValueInterface[] = [];
+let householdPickupPeople: ImportHouseholdPickupInterface[] = [];
+let lists: ImportListInterface[] = [];
 let acceptedPeopleRows: any[] = [];
 
 // Columns explicitly consumed by loadPeople (and ExportB1ZipHelper.exportPeople).
@@ -94,6 +97,8 @@ const resetZipState = () => {
   answers = [];
   personFields = [];
   personFieldValues = [];
+  householdPickupPeople = [];
+  lists = [];
   acceptedPeopleRows = [];
 };
 
@@ -115,6 +120,8 @@ const readB1Zip = async (file: File): Promise<ImportDataInterface> => {
   zip.files["answers.csv"] && loadAnswers(UploadHelper.readCsvString(await zip.file("answers.csv").async("string")));
   zip.files["personfields.csv"] && loadPersonFields(UploadHelper.readCsvString(await zip.file("personfields.csv").async("string")));
   zip.files["personfieldvalues.csv"] && loadPersonFieldValues(UploadHelper.readCsvString(await zip.file("personfieldvalues.csv").async("string")));
+  zip.files["householdpickup.csv"] && loadHouseholdPickups(UploadHelper.readCsvString(await zip.file("householdpickup.csv").async("string")));
+  zip.files["lists.csv"] && loadLists(UploadHelper.readCsvString(await zip.file("lists.csv").async("string")));
 
   extractPeopleCustomFieldsAsForm();
 
@@ -139,7 +146,9 @@ const readB1Zip = async (file: File): Promise<ImportDataInterface> => {
     formSubmissions: formSubmissions,
     answers: answers,
     personFields: personFields,
-    personFieldValues: personFieldValues
+    personFieldValues: personFieldValues,
+    householdPickupPeople: householdPickupPeople,
+    lists: lists
   } as ImportDataInterface;
 
 };
@@ -261,6 +270,52 @@ const loadPersonFieldValues = (data: any) => {
     const row = data[i];
     if (!row.fieldName || row.value === undefined) continue;
     personFieldValues.push({ personKey: row.personKey?.toString() ?? "", fieldName: row.fieldName, value: row.value.toString() });
+  }
+};
+
+const parseJson = (value: unknown) => {
+  if (typeof value !== "string" || value.trim() === "") return undefined;
+  try { return JSON.parse(value); } catch { return undefined; }
+};
+
+// Rows point at households by the key people.csv carries, which assignHousehold prefixes with hh_.
+const loadHouseholdPickups = (data: any) => {
+  householdPickupPeople = [];
+  for (let i = 0; i < data.length; i++) {
+    const row = data[i];
+    const key = row.householdKey?.toString().trim();
+    if (!key || !row.name) continue;
+    const householdKey = "hh_" + key;
+    if (!households.find(h => h.importKey === householdKey)) continue;
+    householdPickupPeople.push({
+      householdKey,
+      personKey: row.personKey?.toString().trim() || undefined,
+      name: row.name,
+      relationship: row.relationship || undefined,
+      status: row.status || "trusted",
+      notes: row.notes || undefined,
+      photoUrl: row.photoUrl || undefined
+    });
+  }
+};
+
+const loadLists = (data: any) => {
+  lists = [];
+  for (let i = 0; i < data.length; i++) {
+    const row = data[i];
+    if (!row.name) continue;
+    lists.push({
+      importKey: row.importKey?.toString().trim() || (lists.length + 1).toString(),
+      name: row.name,
+      category: row.category || undefined,
+      scope: row.scope || undefined,
+      householdInclusion: row.householdInclusion || undefined,
+      autoRefresh: csvBool(row.autoRefresh),
+      notifyOnChange: csvBool(row.notifyOnChange),
+      rules: parseJson(row.rules),
+      actions: parseJson(row.actions),
+      conditions: parseJson(row.conditions)
+    });
   }
 };
 

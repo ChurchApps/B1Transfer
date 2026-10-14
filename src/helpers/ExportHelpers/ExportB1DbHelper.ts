@@ -6,6 +6,7 @@ import {
   , ImportDonationBatchInterface, ImportFundInterface, ImportDonationInterface
   , ImportFundDonationInterface, ImportDataInterface, ImportFormsInterface
   , ImportQuestionsInterface, ImportFormSubmissions, ImportAnswerInterface
+  , ImportHouseholdPickupInterface, ImportListInterface
 } from "../ImportHelper";
 import { ApiHelper } from "..";
 import { runStep } from "./RunStep";
@@ -114,11 +115,22 @@ const exportToB1Db = async (exportData: ImportDataInterface, updateProgress: (na
   try {
     const campusResult = await exportCampuses(exportData, runImport);
     const tmpPeople = await exportPeople(exportData, campusResult.campuses, runImport, updateProgress);
-    await exportPersonFieldValues(exportData, tmpPeople, runImport, updateProgress);
+    const fieldIds = await exportPersonFieldValues(exportData, tmpPeople, runImport, updateProgress);
+    await exportHouseholdPickups(exportData, tmpPeople, runImport);
     const tmpGroups = await exportGroups(exportData, tmpPeople, campusResult.campuses, campusResult.serviceTimes, runImport, updateProgress);
     await exportAttendance(exportData, tmpPeople, tmpGroups, campusResult.services, campusResult.serviceTimes, runImport, updateProgress);
-    await exportDonations(exportData, tmpPeople, runImport, updateProgress);
-    await exportForms(exportData, tmpPeople, tmpGroups, runImport);
+    const tmpFunds = await exportDonations(exportData, tmpPeople, runImport, updateProgress);
+    const tmpQuestions = await exportForms(exportData, tmpPeople, tmpGroups, runImport);
+    await exportLists(exportData, {
+      group: idMap(tmpGroups),
+      form: idMap(tmpQuestions.map(q => ({ importKey: q.questionKey, id: q.id }))),
+      field: fieldIds,
+      giving: idMap(tmpFunds),
+      campus: idMap(campusResult.campuses),
+      service: idMap(campusResult.services),
+      serviceTime: idMap(campusResult.serviceTimes),
+      list: new Map()
+    }, runImport);
   } finally {
     activeBatchId = undefined;
     ApiHelper.onRequest = prevOnRequest;
@@ -232,13 +244,15 @@ const exportPersonFieldValues = async (
   updateProgress: (name: string, status: string) => void
 ) => {
   const values = exportData.personFieldValues || [];
+  const definitions = exportData.personFields || [];
+  // Source field id -> field id in this church, so list rules can follow the field.
+  const fieldIds = new Map<string, string>();
   await runImport("Custom Fields", async () => {
-    if (values.length === 0) {
+    if (values.length === 0 && definitions.length === 0) {
       updateProgress("Custom Fields", "complete");
       return;
     }
     let fields: { id?: string, name?: string, fieldType?: string, choices?: string | null }[] = (await ApiHelper.get("/personfields", "MembershipApi")) || [];
-    const definitions = exportData.personFields || [];
     if (definitions.length > 0) {
       const have = new Set(fields.map(f => (f.name || "").trim().toLowerCase()));
       const missing = definitions.filter(d => d.name && !have.has(d.name.trim().toLowerCase()));
@@ -248,6 +262,10 @@ const exportPersonFieldValues = async (
       }
     }
     const fieldsByName = new Map(fields.map(f => [(f.name || "").trim().toLowerCase(), f]));
+    definitions.forEach(d => {
+      const match = d.name ? fieldsByName.get(d.name.trim().toLowerCase()) : undefined;
+      if (d.importKey && match?.id) fieldIds.set(d.importKey, match.id);
+    });
     const personIds = new Map(tmpPeople.map(p => [p.importKey, p.id]));
 
     const rows: { personId: string, fieldId: string, value: string }[] = [];
@@ -272,6 +290,90 @@ const exportPersonFieldValues = async (
     if (invalidCount > 0) skipped.push(`${invalidCount} value(s) didn't fit the field type`);
     updateProgress("Custom Fields", skipped.length > 0 ? `complete (${rows.length} saved; skipped: ${skipped.join("; ")})` : "complete");
   }, true);
+  return fieldIds;
+};
+
+const idMap = (items: { importKey?: string, id?: string }[]) => {
+  const map = new Map<string, string>();
+  items.forEach(i => { if (i.importKey && i.id) map.set(i.importKey, i.id); });
+  return map;
+};
+
+// A contact's household is reached through any imported person in it, since households
+// without people never make it into a zip.
+const exportHouseholdPickups = async (exportData: ImportDataInterface, tmpPeople: ImportPersonInterface[], runImport: (keyName: string, code: () => void) => Promise<void>) => {
+  const tmpPickups: ImportHouseholdPickupInterface[] = [...(exportData.householdPickupPeople || [])];
+  await runImport("Household Pickup Contacts", async () => {
+    const householdIds = new Map<string, string>();
+    tmpPeople.forEach(p => { if (p.householdKey && p.householdId && !householdIds.has(p.householdKey)) householdIds.set(p.householdKey, p.householdId); });
+    const rows = tmpPickups.filter(p => {
+      p.householdId = householdIds.get(p.householdKey);
+      p.personId = p.personKey ? ImportHelper.getByImportKey(tmpPeople, p.personKey)?.id : undefined;
+      return !!p.householdId;
+    }).map(p => ({
+      id: undefined as string | undefined,
+      householdId: p.householdId,
+      personId: p.personId,
+      name: p.name,
+      photoUrl: p.photoUrl,
+      relationship: p.relationship,
+      status: p.status || "trusted",
+      notes: p.notes
+    }));
+    if (rows.length > 0) await postInBatches("/householdpickup", rows, "MembershipApi");
+  });
+};
+
+type ListIdMaps = Record<"group" | "form" | "field" | "giving" | "campus" | "service" | "serviceTime" | "list", Map<string, string>>;
+
+// Points every rule and action at the ids this church gave the imported records. Ids with no
+// match are left alone, which is right when restoring into the church the zip came from.
+const remapListIds = (list: ImportListInterface, maps: ListIdMaps) => {
+  const walk = (group: any) => {
+    if (!group) return;
+    (group.conditions || []).forEach((c: any) => {
+      if (!c?.entityId) return;
+      const kind = c.provider === "attendance" ? c.entityType : c.provider;
+      const map = (maps as Record<string, Map<string, string>>)[kind];
+      if (map?.has(c.entityId)) c.entityId = map.get(c.entityId);
+    });
+    (group.groups || []).forEach(walk);
+  };
+  walk(list.rules);
+  (Array.isArray(list.actions) ? list.actions : []).forEach((a: any) => {
+    if (a?.groupId && maps.group.has(a.groupId)) a.groupId = maps.group.get(a.groupId);
+  });
+};
+
+const referencesLists = (group: any): boolean => !!group && ((group.conditions || []).some((c: any) => c?.provider === "list") || (group.groups || []).some(referencesLists));
+
+const exportLists = async (exportData: ImportDataInterface, maps: ListIdMaps, runImport: (keyName: string, code: () => void) => Promise<void>) => {
+  const tmpLists: ImportListInterface[] = (exportData.lists || []).map(l => ({ ...l, id: undefined as string | undefined, rules: structuredClone(l.rules), actions: structuredClone(l.actions) }));
+  await runImport("Lists", async () => {
+    if (tmpLists.length === 0) return;
+    const body = (l: ImportListInterface) => ({
+      id: l.id,
+      name: l.name,
+      category: l.category,
+      scope: l.scope || "org",
+      householdInclusion: l.householdInclusion || "none",
+      autoRefresh: !!l.autoRefresh,
+      notifyOnChange: !!l.notifyOnChange,
+      rules: l.rules,
+      actions: l.actions,
+      conditions: l.conditions
+    });
+    tmpLists.forEach(l => remapListIds(l, maps));
+    const saved = await postInBatches("/lists", tmpLists.map(body), "MembershipApi");
+    saved.forEach((row, i) => { tmpLists[i].id = row.id; });
+    // Lists that filter by another list can only be pointed at it once every list has an id.
+    const listIds = idMap(tmpLists);
+    const dependent = tmpLists.filter(l => l.id && referencesLists(l.rules));
+    if (dependent.length > 0) {
+      dependent.forEach(l => remapListIds(l, { ...maps, list: listIds }));
+      await ApiHelper.post("/lists", dependent.map(body), "MembershipApi");
+    }
+  });
 };
 
 const exportGroups = async (
@@ -402,6 +504,7 @@ const exportForms = async (exportData: ImportDataInterface, tmpPeople: ImportPer
       await postInBatches("/formsubmissions", tmpFormSubmissions, "MembershipApi");
     }
   });
+  return tmpQuestions;
 };
 
 const exportDonations = async (exportData: ImportDataInterface, tmpPeople: ImportPersonInterface[], runImport: (keyName: string, code: () => void, skipComplete?: boolean) => Promise<void>, updateProgress: (name: string, status: string) => void) => {
@@ -452,6 +555,7 @@ const exportDonations = async (exportData: ImportDataInterface, tmpPeople: Impor
       updateProgress("Donations", "complete");
     }
   }, true);
+  return tmpFunds;
 };
 
 const exportAttendance = async (

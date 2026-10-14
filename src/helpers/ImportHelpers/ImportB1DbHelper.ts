@@ -11,6 +11,7 @@ import {
   , ImportFundDonationInterface, ImportDataInterface, ImportFormsInterface
   , ImportQuestionsInterface, ImportFormSubmissions, ImportAnswerInterface
   , ImportPersonFieldInterface, ImportPersonFieldValueInterface
+  , ImportHouseholdPickupInterface, ImportListInterface
 } from "../ImportHelper";
 
 let people: ImportPersonInterface[] = [];
@@ -34,10 +35,12 @@ let formSubmissions: ImportFormSubmissions[] = [];
 let answers: ImportAnswerInterface[] = [];
 let personFields: ImportPersonFieldInterface[] = [];
 let personFieldValues: ImportPersonFieldValueInterface[] = [];
+let householdPickupPeople: ImportHouseholdPickupInterface[] = [];
+let lists: ImportListInterface[] = [];
 
 const getB1Data = async (): Promise<ImportDataInterface> => {
   await Promise.all([
-    getPeople(), getCampusServiceTimes(), getGroups(), getGroupMembers(), getAttendance(), getDonations(), getForms(), getQuestions(), getFormSubmissions(), getAnswers(), getPersonFields()
+    getPeople().then(getHouseholdPickups), getCampusServiceTimes(), getGroups(), getGroupMembers(), getAttendance(), getDonations(), getForms(), getQuestions(), getFormSubmissions(), getAnswers(), getPersonFields(), getLists()
   ]).catch(error => {
     if (error.message.includes("Unauthorized")) alert("Please log in to access B1 data");
   });
@@ -63,7 +66,9 @@ const getB1Data = async (): Promise<ImportDataInterface> => {
     formSubmissions: formSubmissions,
     answers: answers,
     personFields: personFields,
-    personFieldValues: personFieldValues
+    personFieldValues: personFieldValues,
+    householdPickupPeople: householdPickupPeople,
+    lists: lists
   } as ImportDataInterface;
 
 };
@@ -164,6 +169,48 @@ const getPersonFields = async () => {
       personFieldValues.push({ personKey: v.personId, fieldName: field.name, value: String(v.value) });
     });
   });
+};
+
+// Pickup contacts are only served per household, so fetch a few households at a time.
+const PICKUP_CONCURRENCY = 8;
+const getHouseholdPickups = async () => {
+  householdPickupPeople = [];
+  const keys = households.map(h => h.importKey);
+  for (let i = 0; i < keys.length; i += PICKUP_CONCURRENCY) {
+    const slice = keys.slice(i, i + PICKUP_CONCURRENCY);
+    const perHousehold = await Promise.all(slice.map(k => ApiHelper.get(`/householdpickup/${k}`, "MembershipApi").catch((): any[] => [])));
+    perHousehold.forEach((rows: any[], j) => {
+      (rows || []).forEach((r) => {
+        householdPickupPeople.push({
+          importKey: r.id,
+          householdKey: slice[j],
+          personKey: r.personId || undefined,
+          name: r.name,
+          photoUrl: r.photoUrl || undefined,
+          relationship: r.relationship || undefined,
+          status: r.status,
+          notes: r.notes || undefined
+        });
+      });
+    });
+  }
+};
+
+const getLists = async () => {
+  const rows: any[] = (await ApiHelper.get("/lists", "MembershipApi").catch((): any[] => [])) || [];
+  lists = rows.map((l) => ({
+    importKey: l.id,
+    id: l.id,
+    name: l.name,
+    category: l.category,
+    scope: l.scope,
+    householdInclusion: l.householdInclusion,
+    autoRefresh: l.autoRefresh,
+    notifyOnChange: l.notifyOnChange,
+    rules: l.rules,
+    actions: l.actions,
+    conditions: l.conditions
+  }));
 };
 
 const getAnswers = async () => {
