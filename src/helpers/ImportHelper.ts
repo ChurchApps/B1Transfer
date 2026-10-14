@@ -50,6 +50,33 @@ export interface ImportFormsInterface extends FormInterface {
 export interface ImportQuestionsInterface extends QuestionInterface { formKey: string, questionKey: string, parentKey?: string, parentId?: string, sort?: number }
 export interface ImportFormSubmissions extends FormSubmissionInterface { formKey: string, personKey: string, importKey?: string, submissionDate?: Date | string }
 export interface ImportAnswerInterface extends AnswerInterface { questionKey: string, formSubmissionKey: string }
+// Someone a household has authorized (or barred) to pick up its children at check-in.
+export interface ImportHouseholdPickupInterface {
+  importKey?: string
+  householdKey: string
+  householdId?: string
+  personKey?: string
+  personId?: string
+  name: string
+  photoUrl?: string
+  relationship?: string
+  status?: string
+  notes?: string
+}
+// A saved people list. Members are recomputed from the rules, so only the definition travels.
+export interface ImportListInterface {
+  importKey: string
+  id?: string
+  name: string
+  category?: string
+  scope?: string
+  householdInclusion?: string
+  autoRefresh?: boolean
+  notifyOnChange?: boolean
+  rules?: any
+  actions?: any
+  conditions?: any
+}
 // Custom person field definition. Values are matched to these by name on upload.
 export interface ImportPersonFieldInterface { id?: string, importKey: string, name: string, fieldType?: string, choices?: string, sort?: number }
 // Custom person field value keyed by field name; resolved to a B1 fieldId at upload, after login.
@@ -77,6 +104,8 @@ export interface ImportDataInterface {
     answers: ImportAnswerInterface[]
     personFields?: ImportPersonFieldInterface[]
     personFieldValues?: ImportPersonFieldValueInterface[]
+    householdPickupPeople?: ImportHouseholdPickupInterface[]
+    lists?: ImportListInterface[]
 }
 
 export class ImportHelper {

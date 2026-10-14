@@ -84,6 +84,7 @@ export const TabRun = (props: Props) => {
         "Households",
         "People",
         "Custom Fields",
+        "Household Pickup Contacts",
         "Photos",
         "Groups",
         "Group Service Times",
@@ -95,7 +96,8 @@ export const TabRun = (props: Props) => {
         "Forms",
         "Questions",
         "Answers",
-        "Form Submissions"
+        "Form Submissions",
+        "Lists"
       ];
     }
     return [
@@ -110,6 +112,10 @@ export const TabRun = (props: Props) => {
       "Questions",
       "Answers",
       "Form Submissions",
+      "Custom Field Definitions",
+      "Custom Field Values",
+      "Household Pickup Contacts",
+      "Lists",
       "Compressing"
     ];
   }, [props.dataExportSource]);

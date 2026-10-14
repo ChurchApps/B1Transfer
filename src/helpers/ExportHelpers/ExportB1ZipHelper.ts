@@ -78,6 +78,8 @@ export const buildB1ZipFiles = async (importData: ImportDataInterface, updatePro
   files.push({ name: "answers.csv", contents: await exportAnswers(importData, runImport) });
   files.push({ name: "personfields.csv", contents: await exportPersonFields(importData, runImport) });
   files.push({ name: "personfieldvalues.csv", contents: await exportPersonFieldValues(importData, runImport) });
+  files.push({ name: "householdpickup.csv", contents: await exportHouseholdPickups(importData, runImport) });
+  files.push({ name: "lists.csv", contents: await exportLists(importData, runImport) });
   return files;
 };
 
@@ -450,6 +452,46 @@ const exportPersonFieldValues = async (importData: ImportDataInterface, runImpor
   await runImport("Custom Field Values", async () => {
     (importData.personFieldValues || []).forEach(v => {
       data.push({ personKey: v.personKey, fieldName: v.fieldName, value: v.value });
+    });
+  });
+  return Papa.unparse(data);
+};
+
+const exportHouseholdPickups = async (importData: ImportDataInterface, runImport: (keyName: string, code: () => Promise<void>) => Promise<void>) => {
+  const data: any[] = [];
+  await runImport("Household Pickup Contacts", async () => {
+    (importData.householdPickupPeople || []).forEach(p => {
+      data.push({
+        householdKey: p.householdKey,
+        personKey: p.personKey || "",
+        name: p.name,
+        relationship: p.relationship || "",
+        status: p.status || "",
+        notes: p.notes || "",
+        photoUrl: p.photoUrl || ""
+      });
+    });
+  });
+  return Papa.unparse(data);
+};
+
+// Rules and actions keep the source church's ids; the database writer remaps them on restore.
+const exportLists = async (importData: ImportDataInterface, runImport: (keyName: string, code: () => Promise<void>) => Promise<void>) => {
+  const data: any[] = [];
+  await runImport("Lists", async () => {
+    (importData.lists || []).forEach(l => {
+      data.push({
+        importKey: l.importKey || l.id,
+        name: l.name,
+        category: l.category || "",
+        scope: l.scope || "",
+        householdInclusion: l.householdInclusion || "",
+        autoRefresh: yn(l.autoRefresh),
+        notifyOnChange: yn(l.notifyOnChange),
+        rules: jsonCell(l.rules),
+        actions: jsonCell(l.actions),
+        conditions: jsonCell(l.conditions)
+      });
     });
   });
   return Papa.unparse(data);

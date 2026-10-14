@@ -79,6 +79,16 @@ async function seed(request: APIRequestContext, jwt: string) {
   ]);
   const [field] = await call(request, jwt, "post", "/membership/personfields", [{ name: `${SEED} Ministry`, fieldType: "Textbox", sort: 99 }]);
   await call(request, jwt, "post", "/membership/personfieldvalues", [{ personId: ada.id, fieldId: field.id, value: "Greeter" }]);
+  await call(request, jwt, "post", "/membership/householdpickup", [{ householdId: h1.id, name: `Nan ${SEED}`, relationship: "Grandmother", status: "trusted", notes: "Call first" }]);
+  await call(request, jwt, "post", "/membership/lists", [
+    {
+      name: `${SEED} List`,
+      category: "Care",
+      scope: "org",
+      householdInclusion: "none",
+      rules: { match: "all", conditions: [{ provider: "group", field: "memberOf", operator: "in", entityId: group.id }] }
+    }
+  ]);
 }
 
 // Keeps only the seeded rows, renamed, so the restore lands as new records beside the originals.
@@ -102,6 +112,9 @@ async function buildRestoreZip(exported: JSZip) {
   put("questions.csv", await read("questions.csv"), r => formKeys.has(r.formKey));
   put("personfields.csv", await read("personfields.csv"), r => r.name?.startsWith(SEED));
   put("personfieldvalues.csv", await read("personfieldvalues.csv"), r => personKeys.has(r.personKey));
+  const householdKeys = new Set(people.map(r => r.householdKey));
+  put("householdpickup.csv", await read("householdpickup.csv"), r => householdKeys.has(r.householdKey));
+  put("lists.csv", await read("lists.csv"), r => r.name?.startsWith(SEED));
   fs.writeFileSync(RESTORE_PATH, await restore.generateAsync({ type: "nodebuffer" }));
 }
 
@@ -171,4 +184,15 @@ test("the B1 Export Zip round-trips every field staff can enter", async ({ page,
   const rField = fields.find(f => f.name === `${RESTORED} Ministry`);
   const values: any[] = await call(request, jwt, "get", `/membership/personfieldvalues/person/${rAda.id}`);
   expect(values.find(v => v.fieldId === rField?.id)?.value).toBe("Greeter");
+
+  const pickups: any[] = await call(request, jwt, "get", `/membership/householdpickup/${rAda.householdId}`);
+  expect(pickups.find(p => p.name === `Nan ${RESTORED}`)).toMatchObject({ relationship: "Grandmother", status: "trusted", notes: "Call first" });
+
+  const lists: any[] = await call(request, jwt, "get", "/membership/lists");
+  const rList = lists.find(l => l.name === `${RESTORED} List`);
+  expect(rList).toMatchObject({ category: "Care", scope: "org" });
+  const rules = typeof rList.rules === "string" ? JSON.parse(rList.rules) : rList.rules;
+  expect(rules.conditions[0].entityId).toBe(rGroup.id);
+  const listPeople: any[] = await call(request, jwt, "get", `/membership/lists/${rList.id}/people`);
+  expect(listPeople.map(p => p.id).sort()).toEqual([rAda.id, rBram.id].sort());
 });

@@ -81,6 +81,8 @@ export const TabDestination = (props: Props) => {
       households: cats.people ? data.households : [],
       personFields: cats.people ? data.personFields || [] : [],
       personFieldValues: cats.people ? data.personFieldValues || [] : [],
+      householdPickupPeople: cats.people ? data.householdPickupPeople || [] : [],
+      lists: cats.people ? data.lists || [] : [],
       campuses: data.campuses,
       services: data.services,
       serviceTimes: data.serviceTimes,
