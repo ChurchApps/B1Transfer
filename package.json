@@ -33,6 +33,7 @@
     "preview": "vite preview",
     "test": "playwright test",
     "test:headed": "playwright test --headed",
+    "test:unit": "node node_modules/esbuild/bin/esbuild src/helpers/__tests__/toDateOnly.test.ts --bundle --platform=node --format=esm --packages=external --alias:@churchapps/apphelper=./node_modules/@churchapps/apphelper/dist/index.js --loader:.css=empty --log-level=warning --outfile=tests/.tmp/unit/toDateOnly.test.mjs && TZ=America/Chicago node --test tests/.tmp/unit/toDateOnly.test.mjs",
     "lint": "eslint --fix src/",
     "predeploy-staging": "VITE_STAGE=staging yarn build",
     "exec-deploy-staging": "aws s3 sync build/ s3://staging-chums-transfer",

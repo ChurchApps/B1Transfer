@@ -113,9 +113,9 @@ const exportToB1Db = async (exportData: ImportDataInterface, updateProgress: (na
 
   try {
     const campusResult = await exportCampuses(exportData, runImport);
-    const tmpPeople = await exportPeople(exportData, runImport, updateProgress);
+    const tmpPeople = await exportPeople(exportData, campusResult.campuses, runImport, updateProgress);
     await exportPersonFieldValues(exportData, tmpPeople, runImport, updateProgress);
-    const tmpGroups = await exportGroups(exportData, tmpPeople, campusResult.serviceTimes, runImport, updateProgress);
+    const tmpGroups = await exportGroups(exportData, tmpPeople, campusResult.campuses, campusResult.serviceTimes, runImport, updateProgress);
     await exportAttendance(exportData, tmpPeople, tmpGroups, campusResult.services, campusResult.serviceTimes, runImport, updateProgress);
     await exportDonations(exportData, tmpPeople, runImport, updateProgress);
     await exportForms(exportData, tmpPeople, tmpGroups, runImport);
@@ -155,37 +155,41 @@ const exportCampuses = async (exportData: ImportDataInterface, runImport: (keyNa
   const tmpServiceTimes: ImportServiceTimeInterface[] = [...exportData.serviceTimes];
 
   await runImport("Campuses/Services/Times", async () => {
+    tmpCampuses.forEach((c) => { if (!c.importKey) c.importKey = c.id; });
     if (tmpCampuses.length > 0) {
       await postInBatches("/campuses", tmpCampuses, "MembershipApi");
     }
 
     if (tmpServices.length > 0) {
-      tmpServices.forEach((s) => { s.campusId = ImportHelper.getByImportKey(tmpCampuses, s.campusKey).id; });
+      tmpServices.forEach((s) => {
+        if (!s.importKey) s.importKey = s.id;
+        if (!s.campusKey) s.campusKey = s.campusId;
+        s.campusId = ImportHelper.getByImportKey(tmpCampuses, s.campusKey)?.id;
+      });
       await postInBatches("/services", tmpServices, "AttendanceApi");
     }
 
     if (tmpServiceTimes.length > 0) {
-      tmpServiceTimes.forEach((st) => { st.serviceId = ImportHelper.getByImportKey(tmpServices, st.serviceKey).id; });
+      tmpServiceTimes.forEach((st) => {
+        if (!st.importKey) st.importKey = st.id;
+        if (!st.serviceKey) st.serviceKey = st.serviceId;
+        st.serviceId = ImportHelper.getByImportKey(tmpServices, st.serviceKey)?.id;
+      });
       await postInBatches("/servicetimes", tmpServiceTimes, "AttendanceApi");
     }
   });
   return { campuses: tmpCampuses, services: tmpServices, serviceTimes: tmpServiceTimes };
 };
 
-const exportPeople = async (exportData: ImportDataInterface, runImport: (keyName: string, code: () => void, skipComplete?: boolean) => Promise<void>, updateProgress: (name: string, status: string) => void) => {
+const exportPeople = async (exportData: ImportDataInterface, tmpCampuses: ImportCampusInterface[], runImport: (keyName: string, code: () => void, skipComplete?: boolean) => Promise<void>, updateProgress: (name: string, status: string) => void) => {
   const tmpPeople: ImportPersonInterface[] = [...exportData.people];
   const tmpHouseholds: ImportHouseholdInterface[] = [...exportData.households];
 
   tmpPeople.forEach((p) => {
-    // Blank/invalid birthdates would make new Date("").toISOString() throw and abort the whole import.
-    if (p.birthDate) {
-      const d = new Date(p.birthDate);
-      p.birthDate = isNaN(d.getTime()) ? undefined : d.toISOString();
-    } else {
-      p.birthDate = undefined;
-    }
-    // The Api keeps anniversary only when it's YYYY-MM-DD, so "9/17/1994" would otherwise save as blank.
+    // The Api keeps date-only fields only as YYYY-MM-DD. toISOString() shifts the day east of UTC.
+    p.birthDate = ImportHelper.toDateOnly(p.birthDate);
     p.anniversary = ImportHelper.toDateOnly(p.anniversary);
+    if (p.campusKey) p.campusId = ImportHelper.getByImportKey(tmpCampuses, p.campusKey)?.id;
   });
 
   await runImport("Households", async () => {
@@ -197,7 +201,7 @@ const exportPeople = async (exportData: ImportDataInterface, runImport: (keyName
   await runImport("People", async () => {
     if (tmpPeople.length > 0) {
       tmpPeople.forEach((p) => {
-        p.householdId = ImportHelper.getByImportKey(tmpHouseholds, p.householdKey).id;
+        p.householdId = ImportHelper.householdIdFor(tmpHouseholds, p.householdKey);
         p.householdRole = ImportHelper.toHouseholdRole(p.householdRole);
       });
       await postInBatches("/people", tmpPeople, "MembershipApi", (current, total, isComplete) => {
@@ -233,7 +237,16 @@ const exportPersonFieldValues = async (
       updateProgress("Custom Fields", "complete");
       return;
     }
-    const fields: { id?: string, name?: string, fieldType?: string, choices?: string | null }[] = (await ApiHelper.get("/personfields", "MembershipApi")) || [];
+    let fields: { id?: string, name?: string, fieldType?: string, choices?: string | null }[] = (await ApiHelper.get("/personfields", "MembershipApi")) || [];
+    const definitions = exportData.personFields || [];
+    if (definitions.length > 0) {
+      const have = new Set(fields.map(f => (f.name || "").trim().toLowerCase()));
+      const missing = definitions.filter(d => d.name && !have.has(d.name.trim().toLowerCase()));
+      if (missing.length > 0) {
+        await ApiHelper.post("/personfields", missing.map(d => ({ name: d.name, fieldType: d.fieldType, choices: d.choices ?? null, sort: d.sort })), "MembershipApi");
+        fields = (await ApiHelper.get("/personfields", "MembershipApi")) || [];
+      }
+    }
     const fieldsByName = new Map(fields.map(f => [(f.name || "").trim().toLowerCase(), f]));
     const personIds = new Map(tmpPeople.map(p => [p.importKey, p.id]));
 
@@ -264,6 +277,7 @@ const exportPersonFieldValues = async (
 const exportGroups = async (
   exportData: ImportDataInterface,
   tmpPeople: ImportPersonInterface[],
+  tmpCampuses: ImportCampusInterface[],
   tmpServiceTimes: ImportServiceTimeInterface[],
   runImport: (keyName: string, code: () => void, skipComplete?: boolean) => Promise<void>,
   updateProgress: (name: string, status: string) => void
@@ -274,6 +288,9 @@ const exportGroups = async (
 
   await runImport("Groups", async () => {
     if (tmpGroups.length > 0) {
+      tmpGroups.forEach((g) => {
+        if (g.campusKey) g.campusId = ImportHelper.getByImportKey(tmpCampuses, g.campusKey)?.id;
+      });
       await postInBatches("/groups", tmpGroups, "MembershipApi");
     }
   });
@@ -317,16 +334,31 @@ const exportForms = async (exportData: ImportDataInterface, tmpPeople: ImportPer
 
   await runImport("Forms", async () => {
     if (tmpForms.length > 0) {
+      tmpForms.forEach(f => {
+        if (f.groupKey) f.groupId = ImportHelper.getByImportKey(tmpGroups, f.groupKey)?.id;
+      });
       await postInBatches("/forms", tmpForms, "MembershipApi");
     }
   });
 
   await runImport("Questions", async () => {
     if (tmpQuestions.length > 0) {
-      tmpQuestions.forEach(q => {
-        q.formId = ImportHelper.getByImportKey(tmpForms, q.formKey).id;
-      });
-      await postInBatches("/questions", tmpQuestions, "MembershipApi");
+      // Parents have to exist before a child can point at the new id.
+      const pending = [...tmpQuestions];
+      const posted: ImportQuestionsInterface[] = [];
+      while (pending.length > 0) {
+        let ready = pending.filter(q => !q.parentKey || posted.some(p => p.questionKey === q.parentKey));
+        if (ready.length === 0) ready = pending.splice(0, pending.length);
+        ready.forEach(q => {
+          q.formId = ImportHelper.getByImportKey(tmpForms, q.formKey)?.id;
+          if (q.parentKey) q.parentId = posted.find(p => p.questionKey === q.parentKey)?.id;
+          const idx = pending.indexOf(q);
+          if (idx >= 0) pending.splice(idx, 1);
+        });
+        const valid = ready.filter(q => q.formId);
+        if (valid.length > 0) await postInBatches("/questions", valid, "MembershipApi");
+        posted.push(...valid);
+      }
     }
   });
 
