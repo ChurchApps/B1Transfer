@@ -2,28 +2,56 @@ import { PersonInterface, CampusInterface, ServiceInterface, ServiceTimeInterfac
 
 export interface ImportCampusInterface extends CampusInterface { importKey: string }
 export interface ImportServiceInterface extends ServiceInterface { importKey: string, campusKey?: string }
-export interface ImportServiceTimeInterface extends ServiceTimeInterface { importKey?: string, serviceKey?: string }
+export interface ImportServiceTimeInterface extends ServiceTimeInterface {
+  importKey?: string
+  serviceKey?: string
+  dayOfWeek?: number | null
+  startTime?: string | null
+  endTime?: string | null
+  checkinOpenMinutes?: number | null
+  checkinCloseMinutes?: number | null
+}
 
 export interface ImportGroupServiceTimeInterface extends GroupServiceTimeInterface { importKey: string, groupKey?: string, serviceTimeKey?: string }
-export interface ImportGroupInterface extends GroupInterface { importKey: string, serviceTimeKey: string, startDate: Date, endDate: Date }
+export interface ImportGroupInterface extends GroupInterface {
+  importKey: string
+  serviceTimeKey: string
+  startDate: Date
+  endDate: Date
+  campusKey?: string
+  discussionsEnabled?: boolean
+  announcementsEnabled?: boolean
+  publicRoster?: boolean
+}
 export interface ImportGroupMemberInterface extends GroupMemberInterface { groupKey: string, personKey: string }
 
-export interface ImportPersonInterface extends PersonInterface { importKey: string, householdKey?: string, }
+export interface ImportPersonInterface extends PersonInterface { importKey: string, householdKey?: string, campusKey?: string }
 export interface ImportHouseholdInterface extends HouseholdInterface { importKey: string }
 
 export interface ImportSessionInterface extends SessionInterface { importKey: string, groupKey: string, serviceTimeKey: string }
-export interface ImportVisitInterface extends VisitInterface { importKey: string, personKey: string, serviceKey: string, groupKey: string }
+export interface ImportVisitInterface extends VisitInterface { importKey: string, personKey: string, serviceKey: string, groupKey: string, checkinTime?: Date }
 export interface ImportVisitSessionInterface extends VisitSessionInterface { visitKey: string, sessionKey: string }
 
 export interface ImportDonationBatchInterface extends DonationBatchInterface { importKey: string }
 export interface ImportFundInterface extends FundInterface { importKey: string }
-export interface ImportDonationInterface extends DonationInterface { importKey: string, batchKey: string, personKey: string, fundKey: string }
+export interface ImportDonationInterface extends DonationInterface { importKey: string, batchKey: string, personKey: string, fundKey: string, transactionId?: string }
 export interface ImportFundDonationInterface extends FundDonationInterface { fundKey: string, donationKey: string }
 
-export interface ImportFormsInterface extends FormInterface { importKey: string }
-export interface ImportQuestionsInterface extends QuestionInterface { formKey: string, questionKey: string }
-export interface ImportFormSubmissions extends FormSubmissionInterface { formKey: string, personKey: string }
+export interface ImportFormsInterface extends FormInterface {
+  importKey: string
+  description?: string
+  thankYouMessage?: string
+  followUpSubject?: string
+  followUpBody?: string
+  autoCreatePerson?: boolean
+  groupId?: string
+  groupKey?: string
+}
+export interface ImportQuestionsInterface extends QuestionInterface { formKey: string, questionKey: string, parentKey?: string, parentId?: string, sort?: number }
+export interface ImportFormSubmissions extends FormSubmissionInterface { formKey: string, personKey: string, importKey?: string, submissionDate?: Date | string }
 export interface ImportAnswerInterface extends AnswerInterface { questionKey: string, formSubmissionKey: string }
+// Custom person field definition. Values are matched to these by name on upload.
+export interface ImportPersonFieldInterface { id?: string, importKey: string, name: string, fieldType?: string, choices?: string, sort?: number }
 // Custom person field value keyed by field name; resolved to a B1 fieldId at upload, after login.
 export interface ImportPersonFieldValueInterface { personKey: string, fieldName: string, value: string }
 
@@ -47,6 +75,7 @@ export interface ImportDataInterface {
     questions: ImportQuestionsInterface[]
     formSubmissions: ImportFormSubmissions[]
     answers: ImportAnswerInterface[]
+    personFields?: ImportPersonFieldInterface[]
     personFieldValues?: ImportPersonFieldValueInterface[]
 }
 
@@ -121,20 +150,29 @@ export class ImportHelper {
   };
 
   //get or create
-  static getOrCreateFund(funds: ImportFundInterface[], name: string) {
+  static getOrCreateFund(funds: ImportFundInterface[], name: string, details?: { taxDeductible?: boolean, visible?: boolean }) {
     let result = ArrayHelper.getOne(funds, "name", name);
     if (result === null) {
-      result = { importKey: (funds.length + 1).toString(), name: name } as ImportFundInterface;
+      result = { importKey: (funds.length + 1).toString(), name: name, taxDeductible: details?.taxDeductible, visible: details?.visible } as ImportFundInterface;
       funds.push(result);
+    } else if (details) {
+      if (result.taxDeductible === undefined && details.taxDeductible !== undefined) result.taxDeductible = details.taxDeductible;
+      if (result.visible === undefined && details.visible !== undefined) result.visible = details.visible;
     }
     return result;
   }
 
-  static getOrCreateBatch(batches: ImportDonationBatchInterface[], name: string, date: Date) {
-    let result = ArrayHelper.getOne(batches, "name", name);
+  // matchDate keeps two batches that share a name (Sunday offering on different weeks) apart.
+  // Callers without a real batch date leave it false so rows that only share a batch id stay together.
+  static getOrCreateBatch(batches: ImportDonationBatchInterface[], name: string, date: Date | string, matchDate = false) {
+    const batchDate = this.toDateOnly(date) || "";
+    const result = matchDate
+      ? batches.find(b => b.name === name && (this.toDateOnly(b.batchDate) || "") === batchDate) || null
+      : ArrayHelper.getOne(batches, "name", name);
     if (result === null) {
-      result = { importKey: (batches.length + 1).toString(), name: name, batchDate: date.toISOString() } as ImportDonationBatchInterface;
-      batches.push(result);
+      const created = { importKey: (batches.length + 1).toString(), name: name, batchDate: batchDate || undefined } as ImportDonationBatchInterface;
+      batches.push(created);
+      return created;
     }
     return result;
   }
@@ -142,11 +180,23 @@ export class ImportHelper {
   static getOrCreateVisit(visits: ImportVisitInterface[], data: any, serviceTimes: ImportServiceTimeInterface[]) {
     const serviceTime: ImportServiceTimeInterface = this.getByImportKey(serviceTimes, data.serviceTimeKey);
     const serviceKey = (serviceTime === null) ? "" : serviceTime.serviceKey;
+    const sameDay = (a: unknown, b: unknown) => {
+      const left = this.toDateOnly(a as string);
+      return !!left && left === this.toDateOnly(b as string);
+    };
     for (let i = 0; i < visits.length; i++) {
       const v = visits[i];
-      if (v.personKey === data.personKey && v.serviceKey === serviceKey && v.groupKey === data.groupKey && v.visitDate === new Date(data.date)) return v;
+      if (v.personKey === data.personKey && v.serviceKey === serviceKey && v.groupKey === data.groupKey && sameDay(v.visitDate, data.date)) return v;
     }
-    const result = { importKey: (visits.length + 1).toString(), visitDate: new Date(data.date), personKey: data.personKey, serviceKey: serviceKey, groupKey: data.groupKey } as ImportVisitInterface;
+    const result = {
+      importKey: (visits.length + 1).toString(),
+      visitDate: new Date(data.date),
+      personKey: data.personKey,
+      serviceKey: serviceKey,
+      groupKey: data.groupKey,
+      checkinType: data.checkinType || undefined,
+      checkinTime: data.checkinTime ? new Date(data.checkinTime) : undefined
+    } as ImportVisitInterface;
     visits.push(result);
     return result;
   }
@@ -158,13 +208,21 @@ export class ImportHelper {
     return result;
   }
 
-  static getOrCreateCampus(campuses: ImportCampusInterface[], campusName: string) {
+  static getOrCreateCampus(campuses: ImportCampusInterface[], campusName: string, details?: Partial<ImportCampusInterface>) {
     if (campusName === undefined || campusName === null || campusName === "") return null;
     let result = ArrayHelper.getOne(campuses, "name", campusName);
+    const fill = (target: ImportCampusInterface) => {
+      if (!details) return;
+      (["address1", "address2", "city", "state", "zip", "timezone", "website"] as const).forEach((key) => {
+        const value = details[key];
+        if ((target[key] === undefined || target[key] === "") && value) target[key] = value;
+      });
+    };
     if (result === null) {
       result = { name: campusName, importKey: (campuses.length + 1).toString() } as ImportCampusInterface;
+      fill(result);
       campuses.push(result);
-    }
+    } else fill(result);
     return result;
   }
 
@@ -180,7 +238,17 @@ export class ImportHelper {
     if (service === null || data.importKey === undefined || data.importKey === null || data.importKey === "") return null;
     let result: ImportServiceTimeInterface = this.getByImportKey(serviceTimes, data.serviceTimeKey);
     if (result === null) {
-      result = { serviceKey: service.importKey, importKey: data.importKey, name: data.time } as ImportServiceTimeInterface;
+      const optionalNumber = (value: unknown) => (value === undefined || value === null || value === "") ? undefined : Number(value);
+      result = {
+        serviceKey: service.importKey,
+        importKey: data.importKey,
+        name: data.time,
+        dayOfWeek: optionalNumber(data.dayOfWeek),
+        startTime: data.startTime || undefined,
+        endTime: data.endTime || undefined,
+        checkinOpenMinutes: optionalNumber(data.checkinOpenMinutes),
+        checkinCloseMinutes: optionalNumber(data.checkinCloseMinutes)
+      } as ImportServiceTimeInterface;
       serviceTimes.push(result);
     }
     return result;
