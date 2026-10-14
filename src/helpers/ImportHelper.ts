@@ -85,10 +85,24 @@ export class ImportHelper {
   static getServiceTime(serviceTimes: ImportServiceTimeInterface[], importKey: string) { return ArrayHelper.getOne(serviceTimes, "importKey", importKey) as ImportServiceTimeInterface; }
   static getByImportKey(items: any[], importKey: string) { return ArrayHelper.getOne(items, "importKey", importKey); }
   static getById(items: any[], id: string) { return ArrayHelper.getOne(items, "id", id); }
+  // The id of the household with this import key, or undefined when the key is blank or unmatched.
+  static householdIdFor(households: any[], householdKey?: string): string | undefined {
+    if (!householdKey) return undefined;
+    return this.getByImportKey(households, householdKey)?.id;
+  }
 
   // Normalizes a typed date ("9/17/1994", "1994-09-17", "Sep 17, 1994") to the YYYY-MM-DD form
   // the Api stores for date-only fields. Returns undefined for blank or unparseable input.
   static toDateOnly(value: string | Date | undefined | null) {
+    if (value instanceof Date) {
+      if (isNaN(value.getTime())) return undefined;
+      // new Date("2026-03-08") is UTC midnight; reading local parts would shift it to the previous day west of UTC.
+      const utcMidnight = value.getUTCHours() === 0 && value.getUTCMinutes() === 0 && value.getUTCSeconds() === 0 && value.getUTCMilliseconds() === 0;
+      const [y, m, d] = utcMidnight
+        ? [value.getUTCFullYear(), value.getUTCMonth() + 1, value.getUTCDate()]
+        : [value.getFullYear(), value.getMonth() + 1, value.getDate()];
+      return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    }
     const text = value?.toString().trim();
     if (!text) return undefined;
     const iso = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
