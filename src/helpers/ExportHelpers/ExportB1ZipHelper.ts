@@ -288,7 +288,7 @@ const exportDonations = async (importData: ImportDataInterface, runImport: (keyN
       const writeRow = (fund: ImportFundInterface | undefined, fundAmount: unknown) => {
         data.push({
           donationKey: donation.id || donation.importKey || "",
-          batch: batch?.id || "",
+          batch: batch?.id || batch?.importKey || "",
           batchName: batch?.name || "",
           batchDate: dateOnly(batch?.batchDate),
           date: dateOnly(donation.donationDate),

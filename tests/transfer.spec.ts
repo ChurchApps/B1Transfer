@@ -124,6 +124,12 @@ test.describe("B1Transfer data transfer", () => {
     expect(after.questions).toBe(before.questions * 2);
     expect(after.formSubmissions).toBe(before.formSubmissions * 2);
     expect(after.answers).toBe(before.answers * 2);
+    expect(after.households).toBe(before.households * 2);
+    expect(after.groups).toBe(before.groups * 2);
+    expect(after.groupServiceTimes).toBe(before.groupServiceTimes * 2);
+    expect(after.batches).toBe(before.batches * 2);
+    expect(after.fundDonations).toBe(before.fundDonations * 2);
+    expect(after.lists).toBe(before.lists * 2);
     // Attendance is keyed off looser linkage; just confirm it grew.
     expect(after.visits).toBeGreaterThan(before.visits);
     expect(after.sessions).toBeGreaterThan(before.sessions);
