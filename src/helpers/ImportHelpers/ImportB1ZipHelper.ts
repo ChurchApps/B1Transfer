@@ -188,7 +188,8 @@ const loadFormSubmissions = (data: any) => {
     if (data[i].personKey !== undefined) {
       const row = data[i];
       formSubmissions.push({
-        importKey: row.importKey,
+        // answers.csv points at submissions by row number when the file has no importKey column
+        importKey: row.importKey || (formSubmissions.length + 1).toString(),
         formKey: row.formKey,
         personKey: row.personKey,
         contentType: row.contentType,
@@ -278,6 +279,9 @@ const parseJson = (value: unknown) => {
   try { return JSON.parse(value); } catch { return undefined; }
 };
 
+// A zip built from another zip already carries hh_ keys; don't stack the prefix.
+const hhKey = (key: string) => key.startsWith("hh_") ? key : "hh_" + key;
+
 // Rows point at households by the key people.csv carries, which assignHousehold prefixes with hh_.
 const loadHouseholdPickups = (data: any) => {
   householdPickupPeople = [];
@@ -285,7 +289,7 @@ const loadHouseholdPickups = (data: any) => {
     const row = data[i];
     const key = row.householdKey?.toString().trim();
     if (!key || !row.name) continue;
-    const householdKey = "hh_" + key;
+    const householdKey = hhKey(key);
     if (!households.find(h => h.importKey === householdKey)) continue;
     householdPickupPeople.push({
       householdKey,
@@ -329,7 +333,14 @@ const loadDonations = (data: any) => {
       const d = data[i];
       const hasBatchDate = d.batchDate !== undefined && d.batchDate !== "";
       const batchName = (d.batchName && d.batchName.toString().trim()) || d.batch || "";
-      const batch = ImportHelper.getOrCreateBatch(batches, batchName, hasBatchDate ? d.batchDate : new Date(d.date), hasBatchDate);
+      // Exports from the B1 database carry each batch's id in `batch`, so same-named batches on one day stay apart.
+      const batchId = d.batchName !== undefined ? d.batch?.toString().trim() : "";
+      let batch = batchId ? batches.find(b => b.importKey === batchId) : undefined;
+      if (!batch && batchId) {
+        batch = { importKey: batchId, name: batchName, batchDate: ImportHelper.toDateOnly(hasBatchDate ? d.batchDate : d.date) || undefined } as ImportDonationBatchInterface;
+        batches.push(batch);
+      }
+      if (!batch) batch = ImportHelper.getOrCreateBatch(batches, batchName, hasBatchDate ? d.batchDate : new Date(d.date), hasBatchDate);
       const fund = d.fund ? ImportHelper.getOrCreateFund(funds, d.fund, { taxDeductible: csvBool(d.taxDeductible), visible: csvBool(d.visible) }) : null;
       const explicitKey = d.donationKey?.toString().trim();
       let donation = explicitKey ? donations.find(x => x.importKey === explicitKey) : undefined;
@@ -460,11 +471,14 @@ const loadGroups = (data: any) => {
   groups = [];
   groupServiceTimes = [];
   for (let i = 0; i < data.length; i++) {
-    if (data[i].name !== undefined) {
-      const group = ImportHelper.getOrCreateGroup(groups, data[i]);
-      applyGroupFields(group, data[i]);
-      if (group !== null && group.serviceTimeKey !== undefined && group.serviceTimeKey !== null && group.serviceTimeKey !== "") {
-        const gst = { groupKey: group.importKey, groupId: group.importKey, serviceTimeKey: group.serviceTimeKey } as ImportGroupServiceTimeInterface;
+    // Older zips list a group's extra service times as rows with only importKey and serviceTimeKey filled in.
+    const continuation = data[i].name === undefined && ImportHelper.getByImportKey(groups, data[i].importKey);
+    if (data[i].name !== undefined || continuation) {
+      const group = continuation || ImportHelper.getOrCreateGroup(groups, data[i]);
+      if (!continuation) applyGroupFields(group, data[i]);
+      const serviceTimeKey = data[i].serviceTimeKey;
+      if (group !== null && serviceTimeKey !== undefined && serviceTimeKey !== null && serviceTimeKey !== "") {
+        const gst = { groupKey: group.importKey, groupId: group.importKey, serviceTimeKey } as ImportGroupServiceTimeInterface;
         if (!groupServiceTimes.find(existing => existing.groupKey === gst.groupKey && existing.serviceTimeKey === gst.serviceTimeKey)) groupServiceTimes.push(gst);
       }
     }
@@ -599,7 +613,7 @@ const assignHousehold = (households: ImportHouseholdInterface[], person: any) =>
   const householdKey = person.householdKey?.toString().trim();
   if (householdKey) {
     // Exported zips key each household, so same-named households stay apart and split rows stay together.
-    const key = "hh_" + householdKey;
+    const key = hhKey(householdKey);
     if (!households.find(h => h.importKey === key)) households.push({ name: householdName, importKey: key } as ImportHouseholdInterface);
     person.householdKey = key;
     return;

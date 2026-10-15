@@ -202,6 +202,10 @@ const exportPeople = async (exportData: ImportDataInterface, tmpCampuses: Import
     p.birthDate = ImportHelper.toDateOnly(p.birthDate);
     p.anniversary = ImportHelper.toDateOnly(p.anniversary);
     if (p.campusKey) p.campusId = ImportHelper.getByImportKey(tmpCampuses, p.campusKey)?.id;
+    // Column sizes; one over-long cell would fail the whole people batch.
+    if (p.grade) p.grade = String(p.grade).slice(0, 16);
+    if (p.donorNumber) p.donorNumber = String(p.donorNumber).slice(0, 20);
+    if (p.nametagNotes) p.nametagNotes = String(p.nametagNotes).slice(0, 20);
   });
 
   await runImport("Households", async () => {

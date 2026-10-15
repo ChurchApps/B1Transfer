@@ -42,6 +42,12 @@ export interface Counts {
   // visitSessions whose visit AND session both still exist — i.e. the attendance
   // rows that can actually be exported (orphans referencing deleted rows can't).
   exportableAttendance: number;
+  households: number;
+  groups: number;
+  groupServiceTimes: number;
+  batches: number;
+  fundDonations: number;
+  lists: number;
 }
 
 async function list(request: APIRequestContext, jwt: string, base: string, path: string): Promise<any[]> {
@@ -63,7 +69,13 @@ export async function getCounts(request: APIRequestContext): Promise<Counts> {
     visitSessionList,
     visitList,
     sessionList,
-    questions
+    questions,
+    households,
+    groups,
+    groupServiceTimes,
+    batches,
+    fundDonations,
+    lists
   ] = await Promise.all([
     count(request, jwt, "membership", "people"),
     count(request, jwt, "membership", "groupmembers"),
@@ -75,7 +87,13 @@ export async function getCounts(request: APIRequestContext): Promise<Counts> {
     list(request, jwt, "attendance", "visitsessions"),
     list(request, jwt, "attendance", "visits"),
     list(request, jwt, "attendance", "sessions"),
-    questionCount(request, jwt)
+    questionCount(request, jwt),
+    count(request, jwt, "membership", "households"),
+    count(request, jwt, "membership", "groups"),
+    count(request, jwt, "attendance", "groupservicetimes"),
+    count(request, jwt, "giving", "donationbatches"),
+    count(request, jwt, "giving", "funddonations"),
+    count(request, jwt, "membership", "lists")
   ]);
   const visitIds = new Set(visitList.map((v) => v.id));
   const sessionIds = new Set(sessionList.map((s) => s.id));
@@ -92,6 +110,12 @@ export async function getCounts(request: APIRequestContext): Promise<Counts> {
     visitSessions: visitSessionList.length,
     visits: visitList.length,
     sessions: sessionList.length,
-    exportableAttendance
+    exportableAttendance,
+    households,
+    groups,
+    groupServiceTimes,
+    batches,
+    fundDonations,
+    lists
   };
 }
