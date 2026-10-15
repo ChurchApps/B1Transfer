@@ -33,7 +33,7 @@
     "preview": "vite preview",
     "test": "playwright test",
     "test:headed": "playwright test --headed",
-    "test:unit": "node node_modules/esbuild/bin/esbuild src/helpers/__tests__/toDateOnly.test.ts src/helpers/__tests__/importB1Zip.test.ts --bundle --platform=node --format=esm --packages=external --alias:@churchapps/apphelper=./node_modules/@churchapps/apphelper/dist/index.js --loader:.css=empty --log-level=warning --outdir=tests/.tmp/unit --out-extension:.js=.mjs && TZ=America/Chicago node --test tests/.tmp/unit/toDateOnly.test.mjs tests/.tmp/unit/importB1Zip.test.mjs",
+    "test:unit": "node node_modules/esbuild/bin/esbuild src/helpers/__tests__/toDateOnly.test.ts src/helpers/__tests__/importB1Zip.test.ts src/helpers/__tests__/downloadImageBytes.test.ts --bundle --platform=node --format=esm --packages=external --alias:@churchapps/apphelper=./node_modules/@churchapps/apphelper/dist/index.js --loader:.css=empty --log-level=warning --outdir=tests/.tmp/unit --out-extension:.js=.mjs && TZ=America/Chicago node --test tests/.tmp/unit/toDateOnly.test.mjs tests/.tmp/unit/importB1Zip.test.mjs tests/.tmp/unit/downloadImageBytes.test.mjs",
     "lint": "eslint --fix src/",
     "predeploy-staging": "VITE_STAGE=staging yarn build",
     "exec-deploy-staging": "aws s3 sync build/ s3://staging-chums-transfer",
