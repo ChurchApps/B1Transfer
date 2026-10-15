@@ -22,7 +22,14 @@ export class UploadHelper {
         const oReq = new XMLHttpRequest();
         oReq.open("GET", url, true);
         oReq.responseType = "blob";
+        oReq.timeout = 30000;
+        // A failed photo is skipped so one bad image can't hang the whole export.
+        const skip = () => { console.log("Could not download image: " + url); resolve(); };
+        oReq.onerror = skip;
+        oReq.ontimeout = skip;
+        oReq.onabort = skip;
         oReq.onload = async () => {
+          if (oReq.status < 200 || oReq.status >= 300) { skip(); return; }
           const blob = new Blob([oReq.response], { type: "image/png" });
           const buffer = this.toBuffer(await blob.arrayBuffer());
           files.push({ name: name, contents: buffer });
