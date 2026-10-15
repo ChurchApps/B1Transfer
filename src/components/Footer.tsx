@@ -3,8 +3,8 @@ import { Box, Typography } from "@mui/material";
 
 export const Footer: React.FC = () => (
   <Box sx={{
-    backgroundColor: "#333",
-    color: "#eee",
+    backgroundColor: "var(--c1d5)",
+    color: "rgba(255, 255, 255, 0.8)",
     py: 5,
     textAlign: "center"
   }}>

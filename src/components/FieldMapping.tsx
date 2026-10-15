@@ -119,7 +119,7 @@ export const FieldMappingUI: React.FC<Props> = ({ columns, sampleData, onConfirm
 
   return (
     <Box>
-      <Typography variant="h6" sx={{ fontWeight: 600, color: "primary.main", mb: 1 }}>
+      <Typography variant="h3" sx={{ mb: 1 }}>
         Map Your Fields
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -133,7 +133,7 @@ export const FieldMappingUI: React.FC<Props> = ({ columns, sampleData, onConfirm
       )}
 
       {hasFormAnswers && (
-        <Box sx={{ mb: 2, p: 2, bgcolor: "grey.50", borderRadius: 1, maxWidth: 500 }}>
+        <Box sx={{ mb: 2, p: 2, bgcolor: "background.default", borderRadius: 1, maxWidth: 500 }}>
           <Typography variant="body2" sx={{ mb: 1 }}>
             Columns mapped to <strong>Form Answer</strong> will be saved as a form attached to each person. Give the form a name:
           </Typography>

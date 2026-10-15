@@ -36,7 +36,7 @@ export const Login: React.FC = () => {
     <Box
       sx={{
         display: "flex",
-        backgroundColor: "#EEE",
+        bgcolor: "background.default",
         minHeight: "100vh"
       }}
     >

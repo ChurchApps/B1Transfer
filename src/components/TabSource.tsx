@@ -189,7 +189,7 @@ export const TabSource = (props: Props) => {
   if (showMapping && csvColumns.length > 0) {
     return (
       <Box>
-        <Typography variant="h6" component="h2" gutterBottom sx={{ fontWeight: 600, color: "primary.main", mb: 3 }}>
+        <Typography variant="h2" sx={{ mb: 3 }}>
           Map Fields
         </Typography>
         <FieldMappingUI columns={csvColumns} sampleData={csvData.slice(0, 3)} onConfirm={handleMappingConfirm} />
@@ -199,8 +199,8 @@ export const TabSource = (props: Props) => {
 
   return (
     <Box>
-      <Typography variant="h6" component="h2" sx={{ fontWeight: 600, color: "primary.main", mb: 0.5 }}>
-        Choose a Data Source
+      <Typography variant="h2" sx={{ mb: 0.5 }}>
+        Choose a data source
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
         Where is the data you want to import or convert?
@@ -250,18 +250,18 @@ export const TabSource = (props: Props) => {
             onClick={handleSelectFile}
             sx={{
               border: "2px dashed",
-              borderColor: isDragging ? "primary.main" : "grey.300",
+              borderColor: isDragging ? "primary.main" : "divider",
               borderRadius: 2,
               p: 4,
               textAlign: "center",
               cursor: "pointer",
-              bgcolor: isDragging ? "rgba(21,101,192,0.06)" : "grey.50",
+              bgcolor: isDragging ? "action.hover" : "background.default",
               transition: "all 0.2s ease",
-              "&:hover": { borderColor: "primary.main", bgcolor: "rgba(21,101,192,0.06)" },
+              "&:hover": { borderColor: "primary.main", bgcolor: "action.hover" },
               maxWidth: 500
             }}
           >
-            <CloudUpload sx={{ fontSize: 48, color: isDragging ? "primary.main" : "grey.400", mb: 1 }} />
+            <CloudUpload sx={{ fontSize: 48, color: isDragging ? "primary.main" : "text.secondary", mb: 1 }} />
             <Typography variant="body1" sx={{ fontWeight: 600, mb: 0.5 }}>
               Drag & drop your {sourceFormats.find(s => s.value === props.dataImportSource)?.label} file here
             </Typography>
