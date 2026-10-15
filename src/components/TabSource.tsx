@@ -38,6 +38,8 @@ interface Props {
   setActiveTab: (tabName: string) => void
   setImportData: (data: ImportDataInterface) => void
   setDataImportSource: (data: string | null) => void
+  parseError: string | null
+  setParseError: (error: string | null) => void
 }
 
 export const TabSource = (props: Props) => {
@@ -46,7 +48,8 @@ export const TabSource = (props: Props) => {
   const inputIsFile = props.dataImportSource !== DataSourceType.B1_DB;
   const [, setUploadedFileName] = useState<string | null>(null);
   const [loginError, setLoginError] = useState<boolean>(false);
-  const [parseError, setParseError] = useState<string | null>(null);
+  // Lives in Home: a failed read flips back to step1, remounting this tab.
+  const { parseError, setParseError } = props;
   const [isDragging, setIsDragging] = useState(false);
 
   const [csvColumns, setCsvColumns] = useState<string[]>([]);

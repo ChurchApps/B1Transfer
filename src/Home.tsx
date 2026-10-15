@@ -37,6 +37,7 @@ export const Home = () => {
   const [importData, setImportData] = useState<ImportDataInterface | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [sourceError, setSourceError] = useState<string | null>(null);
 
   const [status, setStatus] = useState<Record<string, string>>({});
   const [undoLog, setUndoLog] = useState<UndoEntry[]>([]);
@@ -61,6 +62,7 @@ export const Home = () => {
     setDataExportSource(null);
     setIsExporting(false);
     setExportError(null);
+    setSourceError(null);
     setStatus({});
     setUndoLog([]);
     setBatchId(undefined);
@@ -114,7 +116,8 @@ export const Home = () => {
             <CardContent sx={{ p: { xs: 2, sm: 4 }, minHeight: 360 }}>
               <ErrorBoundary>
                 {activeTab === "step1" && (
-                  <TabSource importData={importData} isLoadingSourceData={isLoadingSourceData} setActiveTab={setActiveTab} dataImportSource={dataImportSource} setDataImportSource={setDataImportSource} setImportData={setImportData} />
+                  <TabSource importData={importData} isLoadingSourceData={isLoadingSourceData} setActiveTab={setActiveTab} dataImportSource={dataImportSource} setDataImportSource={setDataImportSource} setImportData={setImportData}
+                    parseError={sourceError} setParseError={setSourceError} />
                 )}
                 {activeTab === "step2" && (
                   <TabPreview importData={importData} isLoadingSourceData={isLoadingSourceData} setActiveTab={setActiveTab} dataImportSource={dataImportSource} />
