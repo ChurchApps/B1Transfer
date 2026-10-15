@@ -376,13 +376,15 @@ const loadAttendance = (data: any, tmpServiceTimes: ImportServiceTimeInterface[]
   visitSessions = [];
   for (let i = 0; i < data.length; i++) {
     if (data[i].personKey !== undefined && data[i].groupKey !== undefined) {
+      // Exports include attendance for groups that were later deleted; skip those rows.
+      const group = groups.find(group => group.importKey === data[i].groupKey);
+      if (!group) continue;
       const session = ImportHelper.getOrCreateSession(sessions, new Date(data[i].date), data[i].groupKey, data[i].serviceTimeKey);
       const visit = ImportHelper.getOrCreateVisit(visits, data[i], tmpServiceTimes);
       const visitSession = { visitKey: visit.importKey, sessionKey: session.importKey } as ImportVisitSessionInterface;
       visitSessions.push(visitSession);
 
-      const group = groups.find(group => group.importKey === data[i].groupKey);
-      if (group !== null && group.serviceTimeKey !== undefined && group.serviceTimeKey !== null) {
+      if (group.serviceTimeKey !== undefined && group.serviceTimeKey !== null) {
         const gst = { groupKey: group.importKey, groupId: group.importKey, serviceTimeKey: group.serviceTimeKey } as ImportGroupServiceTimeInterface;
         if (groupServiceTimes.find(gst => gst.groupKey === group.importKey && gst.serviceTimeKey === group.serviceTimeKey) === undefined) groupServiceTimes.push(gst);
       }
