@@ -1,7 +1,5 @@
 import { useState } from "react";
-import { Box, Typography, Button, Card, CardContent, Stepper, Step, StepButton } from "@mui/material";
-import { ImportExport } from "@mui/icons-material";
-import { PageHeader } from "@churchapps/apphelper";
+import { Box, Typography, Button, Card, CardContent, Stack, Stepper, Step, StepButton } from "@mui/material";
 import "react-activity/dist/Dots.css";
 import "react-activity/dist/Windmill.css";
 import { Footer, Header } from "./components";
@@ -74,35 +72,18 @@ export const Home = () => {
     <>
       <Header />
       <Box sx={{ minHeight: "calc(100vh - 200px)" }}>
-        <PageHeader icon={<ImportExport />} title="Import / Export Tool" subtitle="Backup, transfer, and import your B1 data">
-          <Button
-            variant="outlined"
-            size="small"
-            href="https://b1.church/"
-            sx={{
-              color: "#FFF",
-              borderColor: "rgba(255,255,255,0.5)",
-              "&:hover": { borderColor: "#FFF", backgroundColor: "rgba(255,255,255,0.1)" }
-            }}
-          >
-            Go to B1
-          </Button>
-        </PageHeader>
-
-        <Box sx={{ py: 4, px: 3, maxWidth: 1100, mx: "auto" }}>
-          <Card sx={{ mb: 3 }}>
-            <CardContent sx={{ p: 3 }}>
-              <Typography variant="body1" sx={{ mb: 1.5 }}>
+        <Box sx={{ pt: { xs: 2, md: 3, lg: 4 }, pb: 4, px: { xs: 2, md: 3 }, maxWidth: 1100, mx: "auto" }}>
+          <Stack id="page-header" component="header" direction={{ xs: "column", md: "row" }} spacing={2} justifyContent="space-between" alignItems="flex-start" sx={{ mb: 4 }}>
+            <Box>
+              <Typography id="page-header-title" variant="h1">Import / Export Tool</Typography>
+              <Typography color="text.secondary" sx={{ mt: 1 }}>
                 Back up your B1 data, move it to another system, or load existing data into B1 for the first time.
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Supports B1, Breeze, and Planning Center files, plus custom CSV/Excel with field mapping. Convert between
-                any of these formats or read and write directly to your hosted B1 database.
-              </Typography>
-            </CardContent>
-          </Card>
+            </Box>
+            <Button variant="outlined" href="https://b1.church/" sx={{ flexShrink: 0 }}>Go to B1</Button>
+          </Stack>
 
-          <Stepper nonLinear activeStep={activeIndex} sx={{ mb: 4 }}>
+          <Stepper nonLinear alternativeLabel activeStep={activeIndex} sx={{ mb: 4 }}>
             {STEPS.map((s, i) => (
               <Step key={s.key} completed={i < activeIndex}>
                 <StepButton color="inherit" disabled={i >= activeIndex || isExporting} onClick={() => setActiveTab(s.key)}>

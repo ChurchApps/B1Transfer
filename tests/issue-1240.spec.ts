@@ -34,7 +34,7 @@ async function gotoTool(page: Page) {
     await page.locator('[role="dialog"] h3:has-text("Grace Community Church")').first().click();
     await page.waitForURL((url) => !url.pathname.includes("/login"), { timeout: 30000 });
   }
-  await expect(page.getByText("Choose a Data Source")).toBeVisible({ timeout: 30000 });
+  await expect(page.getByText("Choose a data source")).toBeVisible({ timeout: 30000 });
 }
 
 async function choose(page: Page, option: string) {

@@ -36,19 +36,19 @@ export const FormatSelector: React.FC<Props> = ({ options, value, onSelect }) =>
           sx={{
             cursor: "pointer",
             p: 2,
-            border: "2px solid",
-            borderColor: selected ? "primary.main" : "grey.200",
-            bgcolor: selected ? "rgba(21,101,192,0.06)" : "background.paper",
-            transition: "all 0.15s ease",
-            "&:hover": { borderColor: "primary.main", boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }
+            borderColor: selected ? "primary.main" : "divider",
+            bgcolor: selected ? "action.selected" : "background.paper",
+            boxShadow: selected ? (theme) => `inset 0 0 0 1px ${theme.palette.primary.main}` : "none",
+            transition: "background-color 140ms, border-color 140ms",
+            "&:hover": { borderColor: "primary.main", bgcolor: selected ? "action.selected" : "action.hover" }
           }}
         >
           <Stack direction="row" spacing={1.5} alignItems="flex-start">
-            <Box sx={{ color: selected ? "primary.main" : "grey.500", display: "flex", mt: "2px" }}>
+            <Box sx={{ color: selected ? "primary.main" : "text.secondary", display: "flex", mt: "2px" }}>
               {React.cloneElement(ICONS[opt.value], { sx: { fontSize: 28 } } as any)}
             </Box>
             <Box sx={{ minWidth: 0 }}>
-              <Typography variant="body1" sx={{ fontWeight: 600, lineHeight: 1.2, color: selected ? "primary.main" : "text.primary" }}>
+              <Typography variant="body1" sx={{ fontWeight: 600, lineHeight: 1.2, color: selected ? "primary.dark" : "text.primary" }}>
                 {opt.label}
               </Typography>
               <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>

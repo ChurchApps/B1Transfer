@@ -18,7 +18,7 @@ export const TabPreview = (props: Props) => {
 
   return (
     <Box>
-      <Typography variant="h6" component="h2" sx={{ fontWeight: 600, color: "primary.main", mb: 0.5 }}>
+      <Typography variant="h2" sx={{ mb: 0.5 }}>
         Preview Your Data
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>

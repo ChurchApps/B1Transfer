@@ -167,7 +167,7 @@ export const TabDestination = (props: Props) => {
 
   return (
     <Box>
-      <Typography variant="h6" component="h2" sx={{ fontWeight: 600, color: "primary.main", mb: 0.5 }}>
+      <Typography variant="h2" sx={{ mb: 0.5 }}>
         Choose a Destination
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -191,7 +191,7 @@ export const TabDestination = (props: Props) => {
       )}
 
       <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, color: "text.primary" }}>1. Data to include</Typography>
-      <Box sx={{ mb: 3, p: 2, border: "1px solid", borderColor: "grey.200", borderRadius: 2, maxWidth: 400 }}>
+      <Box sx={{ mb: 3, p: 2, border: "1px solid", borderColor: "divider", borderRadius: 2, maxWidth: 400 }}>
         <FormGroup>
           {categoryLabels.map(({ key, label, count }) => (
             <FormControlLabel

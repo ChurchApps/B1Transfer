@@ -37,7 +37,7 @@ export const TabRun = (props: Props) => {
     let detail = "";
 
     if (status === undefined) {
-      icon = <RadioButtonUnchecked sx={{ color: "grey.400" }} />;
+      icon = <RadioButtonUnchecked sx={{ color: "text.disabled" }} />;
     } else if (status === "error") {
       icon = <Error sx={{ color: "error.main" }} />;
       color = "error.main";
@@ -56,7 +56,7 @@ export const TabRun = (props: Props) => {
       const match = status.match(/\((.+)\)/);
       if (match) detail = match[1];
     } else {
-      icon = <RadioButtonUnchecked sx={{ color: "grey.400" }} />;
+      icon = <RadioButtonUnchecked sx={{ color: "text.disabled" }} />;
     }
 
     return (
@@ -153,7 +153,7 @@ export const TabRun = (props: Props) => {
       <>
         <Card sx={{ mt: 3 }}>
           <CardContent>
-            <Typography variant="h6" gutterBottom color="primary" sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+            <Typography variant="h3" sx={{ display: "flex", alignItems: "center", mb: 2 }}>
               {verb} Progress
             </Typography>
 
@@ -263,7 +263,7 @@ export const TabRun = (props: Props) => {
 
   return (
     <Box>
-      <Typography variant="h6" component="h2" sx={{ fontWeight: 600, color: "primary.main", mb: 0.5 }}>
+      <Typography variant="h2" sx={{ mb: 0.5 }}>
         Transfer in Progress
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
