@@ -490,6 +490,8 @@ const loadGroupMembers = (data: any) => {
   groupMembers = [];
   for (let i = 0; i < data.length; i++) {
     if (data[i].groupKey === undefined) continue;
+    // Exports include memberships for people or groups that aren't in the file; skip those rows.
+    if (!ImportHelper.getByImportKey(groups, data[i].groupKey) || !ImportHelper.getByImportKey(people, data[i].personKey)) continue;
     const leader = csvBool(data[i].leader);
     groupMembers.push({ groupKey: data[i].groupKey, personKey: data[i].personKey, leader: leader === true } as ImportGroupMemberInterface);
   }
