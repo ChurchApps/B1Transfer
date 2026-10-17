@@ -402,12 +402,14 @@ const exportGroups = async (
   });
 
   await runImport("Group Service Times", async () => {
-    if (tmpTimes.length > 0) {
-      tmpTimes.forEach((gst) => {
-        gst.groupId = ImportHelper.getByImportKey(tmpGroups, gst.groupKey).id;
-        gst.serviceTimeId = ImportHelper.getByImportKey(tmpServiceTimes, gst.serviceTimeKey).id;
-      });
-      await postInBatches("/groupservicetimes", tmpTimes, "AttendanceApi");
+    tmpTimes.forEach((gst) => {
+      gst.groupId = ImportHelper.getByImportKey(tmpGroups, gst.groupKey)?.id;
+      gst.serviceTimeId = ImportHelper.getByImportKey(tmpServiceTimes, gst.serviceTimeKey)?.id;
+    });
+    // A group can still point at a service time that was deleted before the export; skip that link.
+    const linkedTimes = tmpTimes.filter(gst => gst.groupId && gst.serviceTimeId);
+    if (linkedTimes.length > 0) {
+      await postInBatches("/groupservicetimes", linkedTimes, "AttendanceApi");
     }
   });
 
@@ -572,15 +574,19 @@ const exportAttendance = async (
   updateProgress: (name: string, status: string) => void
 ) => {
   const tmpSessions: ImportSessionInterface[] = [...exportData.sessions];
-  const tmpVisits: ImportVisitInterface[] = [...exportData.visits];
+  // Attendance by people who were deleted before the export has no one to attach to; skip it.
+  const tmpVisits: ImportVisitInterface[] = exportData.visits.filter(v => ImportHelper.getByImportKey(tmpPeople, v.personKey));
   await runImport("Attendance", async () => {
     if (tmpSessions.length > 0) {
       tmpSessions.forEach((s) => {
-        s.groupId = ImportHelper.getByImportKey(tmpGroups, s.groupKey).id;
-        s.serviceTimeId = ImportHelper.getByImportKey(tmpServiceTimes, s.serviceTimeKey).id;
+        s.groupId = ImportHelper.getByImportKey(tmpGroups, s.groupKey)?.id;
+        // B1 sessions may have no service time, and a deleted service time isn't in the zip.
+        s.serviceTimeId = ImportHelper.getByImportKey(tmpServiceTimes, s.serviceTimeKey)?.id;
       });
       await postInBatches("/sessions", tmpSessions, "AttendanceApi");
     }
+
+    const tmpVisitSessions: ImportVisitSessionInterface[] = exportData.visitSessions.filter(vs => ImportHelper.getByImportKey(tmpVisits, vs.visitKey));
 
     if (tmpVisits.length > 0) {
       tmpVisits.forEach((v) => {
@@ -593,7 +599,7 @@ const exportAttendance = async (
       });
       await postInBatches("/visits", tmpVisits, "AttendanceApi", (current, total, isComplete) => {
         if (isComplete) {
-          if (exportData.visitSessions.length > 0) {
+          if (tmpVisitSessions.length > 0) {
             updateProgress("Attendance", "running");
           } else {
             updateProgress("Attendance", "complete");
@@ -604,7 +610,6 @@ const exportAttendance = async (
       });
     }
 
-    const tmpVisitSessions: ImportVisitSessionInterface[] = [...exportData.visitSessions];
     if (tmpVisitSessions.length > 0 && tmpVisits.length > 0) {
       tmpVisitSessions.forEach((vs) => {
         vs.visitId = ImportHelper.getByImportKey(tmpVisits, vs.visitKey).id;
@@ -617,7 +622,7 @@ const exportAttendance = async (
           updateProgress("Attendance", `running (visit sessions batch ${current}/${total})`);
         }
       });
-    } else if (tmpVisits.length === 0 && tmpSessions.length === 0) {
+    } else if (tmpVisitSessions.length === 0) {
       updateProgress("Attendance", "complete");
     }
   }, true);
