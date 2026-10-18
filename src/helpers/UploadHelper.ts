@@ -30,10 +30,14 @@ export class UploadHelper {
         oReq.onabort = skip;
         oReq.onload = async () => {
           if (oReq.status < 200 || oReq.status >= 300) { skip(); return; }
-          const blob = new Blob([oReq.response], { type: "image/png" });
-          const buffer = this.toBuffer(await blob.arrayBuffer());
-          files.push({ name: name, contents: buffer });
-          resolve();
+          try {
+            const blob = new Blob([oReq.response], { type: "image/png" });
+            const buffer = this.toBuffer(await blob.arrayBuffer());
+            files.push({ name: name, contents: buffer });
+            resolve();
+          } catch {
+            skip();
+          }
         };
         oReq.send();
       } catch (e) {
