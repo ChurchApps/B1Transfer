@@ -55,3 +55,17 @@ test("a 200 photo is added to the zip files", async () => {
   assert.equal(files.length, 1);
   assert.equal(files[0].name, "1.png");
 });
+
+// Issue #1289: a photo that downloads but can't be read must also be skipped.
+test("a photo whose bytes can't be read is skipped instead of hanging", async () => {
+  FakeXhr.outcome = 200;
+  const original = Blob.prototype.arrayBuffer;
+  Blob.prototype.arrayBuffer = () => Promise.reject(new Error("read failed"));
+  try {
+    const files: any[] = [];
+    assert.equal(await settles(UploadHelper.downloadImageBytes(files, "1.png", "https://content/1.png")), "settled");
+    assert.equal(files.length, 0);
+  } finally {
+    Blob.prototype.arrayBuffer = original;
+  }
+});
