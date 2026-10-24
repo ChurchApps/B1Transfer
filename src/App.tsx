@@ -140,7 +140,8 @@ const theme = createTheme({
         root: { padding: "12px 16px", borderBottom: `1px solid ${t.border}` },
         head: { fontSize: "0.75rem", lineHeight: "18px", fontWeight: 600, color: t.muted, backgroundColor: "transparent" },
         body: { fontSize: "0.875rem", lineHeight: "21px", fontVariantNumeric: "tabular-nums" },
-        sizeSmall: { padding: "8px 12px" }
+        sizeSmall: { padding: "8px 12px" },
+        stickyHeader: { backgroundColor: t.surface }
       }
     }
   }

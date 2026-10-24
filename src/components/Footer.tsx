@@ -13,7 +13,7 @@ export const Footer: React.FC = () => (
       Phone: 918-994-2638 | support@b1.church
     </Typography>
     <Typography variant="body2">
-      2022 © Live Church Solutions. All rights reserved.
+      {new Date().getFullYear()} © ChurchApps. All rights reserved.
     </Typography>
   </Box>
 );
