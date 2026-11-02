@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@churchapps/apphelper": "^1.10.7",
-    "@churchapps/helpers": "^2.13.1",
+    "@churchapps/apphelper": "^1.10.8",
+    "@churchapps/helpers": "^2.14.0",
     "@mui/icons-material": "^7.3.11",
     "@mui/material": "^7.3.11",
     "@stripe/react-stripe-js": "^3.9.1",
