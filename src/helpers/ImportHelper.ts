@@ -48,7 +48,7 @@ export interface ImportFormsInterface extends FormInterface {
   groupKey?: string
 }
 export interface ImportQuestionsInterface extends QuestionInterface { formKey: string, questionKey: string, parentKey?: string, parentId?: string, sort?: number }
-export interface ImportFormSubmissions extends FormSubmissionInterface { formKey: string, personKey: string, importKey?: string, submissionDate?: Date | string }
+export interface ImportFormSubmissions extends FormSubmissionInterface { formKey: string, personKey: string, importKey?: string }
 export interface ImportAnswerInterface extends AnswerInterface { questionKey: string, formSubmissionKey: string }
 // Someone a household has authorized (or barred) to pick up its children at check-in.
 export interface ImportHouseholdPickupInterface {

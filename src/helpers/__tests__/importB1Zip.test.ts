@@ -74,3 +74,20 @@ test("restoring a B1 zip with sessions for blank or deleted service times and de
   assert.equal(posted["/visits"].every((v: any) => v.personId), true);
   assert.equal(posted["/visitsessions"].every((vs: any) => vs.visitId && vs.sessionId), true);
 });
+
+// formSubmissions.csv holds submissionDate as text. Loading turns it into a Date, and a blank or
+// unreadable value stays undefined instead of becoming a string or an Invalid Date.
+test("a B1 zip loads form submission dates as Dates and leaves blank or bad ones undefined", async () => {
+  const zip = new JSZip();
+  zip.file("formSubmissions.csv", "importKey,formKey,personKey,contentType,submissionDate\n1,5,1,person,2026-03-08 10:15:00\n2,5,1,person,\n3,5,1,person,not a date\n");
+  const data = await zip.generateAsync({ type: "uint8array" });
+
+  const result = await readB1Zip(data as unknown as File);
+  assert.equal(result.formSubmissions.length, 3);
+  assert.ok(result.formSubmissions[0].submissionDate instanceof Date);
+  assert.equal(result.formSubmissions[0].submissionDate.getFullYear(), 2026);
+  assert.equal(result.formSubmissions[0].submissionDate.getMonth(), 2);
+  assert.equal(result.formSubmissions[0].submissionDate.getDate(), 8);
+  assert.equal(result.formSubmissions[1].submissionDate, undefined);
+  assert.equal(result.formSubmissions[2].submissionDate, undefined);
+});
