@@ -182,6 +182,13 @@ const parseChoices = (value: unknown) => {
   try { return JSON.parse(text); } catch { return value; }
 };
 
+// formSubmissions.csv stores the date as text; a blank or unreadable value stays undefined
+const parseSubmissionDate = (value: string): Date | undefined => {
+  if (!value || !value.trim()) return undefined;
+  const date = new Date(value);
+  return isNaN(date.getTime()) ? undefined : date;
+};
+
 const loadFormSubmissions = (data: any) => {
   formSubmissions = [];
   for (let i = 0; i < data.length; i++) {
@@ -193,7 +200,7 @@ const loadFormSubmissions = (data: any) => {
         formKey: row.formKey,
         personKey: row.personKey,
         contentType: row.contentType,
-        submissionDate: row.submissionDate
+        submissionDate: parseSubmissionDate(row.submissionDate)
       } as ImportFormSubmissions);
     }
   }
