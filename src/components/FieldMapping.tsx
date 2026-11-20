@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Select, MenuItem, Button, Alert, Chip, TextField } from "@mui/material";
 import { FieldMapping as FieldMappingType, B1_PEOPLE_FIELDS } from "../types";
+import type { SheetRow } from "../helpers/UploadHelper";
 
 interface Props {
   columns: string[];
-  sampleData: any[];
+  sampleData: SheetRow[];
   onConfirm: (mappings: FieldMappingType[], formName: string) => void;
 }
 

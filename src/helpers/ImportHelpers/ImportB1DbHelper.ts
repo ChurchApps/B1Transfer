@@ -13,6 +13,12 @@ import {
   , ImportPersonFieldInterface, ImportPersonFieldValueInterface
   , ImportHouseholdPickupInterface, ImportListInterface
 } from "../ImportHelper";
+import type { FormInterface, HouseholdInterface } from "@churchapps/helpers";
+
+// Rows the Api returns for custom person field values, household pickup contacts and saved lists.
+interface PersonFieldValueRow { personId?: string, value?: string }
+interface HouseholdPickupRow { id?: string, personId?: string, name?: string, photoUrl?: string, relationship?: string, status?: string, notes?: string }
+type ListRow = Omit<ImportListInterface, "importKey">;
 
 let people: ImportPersonInterface[] = [];
 const households: ImportHouseholdInterface[] = [];
@@ -75,9 +81,9 @@ const getB1Data = async (): Promise<ImportDataInterface> => {
 
 const getCampusServiceTimes = async () => {
   const promises = [];
-  promises.push(ApiHelper.get("/campuses", "MembershipApi").then((data: any) => campuses = data));
-  promises.push(ApiHelper.get("/services", "AttendanceApi").then((data: any) => services = data));
-  promises.push(ApiHelper.get("/servicetimes", "AttendanceApi").then((data: any) => serviceTimes = data));
+  promises.push(ApiHelper.get("/campuses", "MembershipApi").then((data: ImportCampusInterface[]) => campuses = data));
+  promises.push(ApiHelper.get("/services", "AttendanceApi").then((data: ImportServiceInterface[]) => services = data));
+  promises.push(ApiHelper.get("/servicetimes", "AttendanceApi").then((data: ImportServiceTimeInterface[]) => serviceTimes = data));
   await Promise.all(promises);
   campuses = campuses || [];
   services = services || [];
@@ -85,7 +91,7 @@ const getCampusServiceTimes = async () => {
   campuses.forEach(c => { c.importKey = c.id; });
   services.forEach(s => { s.importKey = s.id; s.campusKey = s.campusId; });
   serviceTimes.forEach(st => { st.importKey = st.id; st.serviceKey = st.serviceId; });
-  const data: any[] = [];
+  const data: Record<string, unknown>[] = [];
   serviceTimes.forEach((st) => {
     const service: ImportServiceInterface = ImportHelper.getById(services, st.serviceId);
     const campus: ImportCampusInterface = service ? ImportHelper.getById(campuses, service.campusId) : null;
@@ -99,7 +105,7 @@ const getCampusServiceTimes = async () => {
 const getPeople = async () => {
   const [personRows, householdRows] = await Promise.all([
     ApiHelper.get("/people", "MembershipApi"),
-    ApiHelper.get("/households", "MembershipApi").catch((): any[] => [])
+    ApiHelper.get("/households", "MembershipApi").catch((): HouseholdInterface[] => [])
   ]);
   people = personRows || [];
   const householdNames = new Map<string, string>((householdRows || []).map((h: { id?: string, name?: string }) => [h.id, h.name]));
@@ -116,8 +122,8 @@ const getPeople = async () => {
 
 const getGroups = async () => {
   const promises = [];
-  promises.push(ApiHelper.get("/groups", "MembershipApi").then((data: any) => groups = data));
-  promises.push(ApiHelper.get("/groupserviceTimes", "AttendanceApi").then((data: any) => groupServiceTimes = data));
+  promises.push(ApiHelper.get("/groups", "MembershipApi").then((data: ImportGroupInterface[]) => groups = data));
+  promises.push(ApiHelper.get("/groupserviceTimes", "AttendanceApi").then((data: ImportGroupServiceTimeInterface[]) => groupServiceTimes = data));
   await Promise.all(promises);
   groups.forEach((g) => {
     let serviceTimeIds: string[] = [];
@@ -140,9 +146,9 @@ const getForms = async () => {
 const getQuestions = async () => {
   // GET /questions returns nothing without a formId, so fetch per form or every question is silently dropped.
   questions = [];
-  const formList: any[] = await ApiHelper.get("/forms", "MembershipApi");
+  const formList: FormInterface[] = await ApiHelper.get("/forms", "MembershipApi");
   const perForm = await Promise.all(formList.map(f => ApiHelper.get(`/questions?formId=${f.id}`, "MembershipApi")));
-  perForm.forEach((qs: any[]) => qs.forEach((q) => {
+  perForm.forEach((qs: ImportQuestionsInterface[]) => qs.forEach((q) => {
     q.questionKey = q.id;
     q.parentKey = q.parentId;
     questions.push(q);
@@ -161,10 +167,10 @@ const getFormSubmissions = async () => {
 const getPersonFields = async () => {
   personFields = (await ApiHelper.get("/personfields", "MembershipApi")) || [];
   personFields.forEach(f => { f.importKey = f.id; });
-  const valueGroups = await Promise.all(personFields.map(f => ApiHelper.get(`/personfieldvalues/field/${f.id}`, "MembershipApi").catch((): any[] => [])));
+  const valueGroups = await Promise.all(personFields.map(f => ApiHelper.get(`/personfieldvalues/field/${f.id}`, "MembershipApi").catch((): PersonFieldValueRow[] => [])));
   personFieldValues = [];
   personFields.forEach((field, i) => {
-    (valueGroups[i] || []).forEach((v: { personId?: string, value?: string }) => {
+    (valueGroups[i] || []).forEach((v: PersonFieldValueRow) => {
       if (v.value === undefined || v.value === null || v.value === "") return;
       personFieldValues.push({ personKey: v.personId, fieldName: field.name, value: String(v.value) });
     });
@@ -178,8 +184,8 @@ const getHouseholdPickups = async () => {
   const keys = households.map(h => h.importKey);
   for (let i = 0; i < keys.length; i += PICKUP_CONCURRENCY) {
     const slice = keys.slice(i, i + PICKUP_CONCURRENCY);
-    const perHousehold = await Promise.all(slice.map(k => ApiHelper.get(`/householdpickup/${k}`, "MembershipApi").catch((): any[] => [])));
-    perHousehold.forEach((rows: any[], j) => {
+    const perHousehold = await Promise.all(slice.map(k => ApiHelper.get(`/householdpickup/${k}`, "MembershipApi").catch((): HouseholdPickupRow[] => [])));
+    perHousehold.forEach((rows: HouseholdPickupRow[], j) => {
       (rows || []).forEach((r) => {
         householdPickupPeople.push({
           importKey: r.id,
@@ -197,7 +203,7 @@ const getHouseholdPickups = async () => {
 };
 
 const getLists = async () => {
-  const rows: any[] = (await ApiHelper.get("/lists", "MembershipApi").catch((): any[] => [])) || [];
+  const rows: ListRow[] = (await ApiHelper.get("/lists", "MembershipApi").catch((): ListRow[] => [])) || [];
   lists = rows.map((l) => ({
     importKey: l.id,
     id: l.id,
@@ -223,10 +229,10 @@ const getGroupMembers = async () => {
 
 const getDonations = async () => {
   const promises = [];
-  promises.push(ApiHelper.get("/funds", "GivingApi").then((data: any) => funds = data));
-  promises.push(ApiHelper.get("/donationbatches", "GivingApi").then((data: any) => batches = data));
-  promises.push(ApiHelper.get("/donations", "GivingApi").then((data: any) => donations = data));
-  promises.push(ApiHelper.get("/funddonations", "GivingApi").then((data: any) => fundDonations = data));
+  promises.push(ApiHelper.get("/funds", "GivingApi").then((data: ImportFundInterface[]) => funds = data));
+  promises.push(ApiHelper.get("/donationbatches", "GivingApi").then((data: ImportDonationBatchInterface[]) => batches = data));
+  promises.push(ApiHelper.get("/donations", "GivingApi").then((data: ImportDonationInterface[]) => donations = data));
+  promises.push(ApiHelper.get("/funddonations", "GivingApi").then((data: ImportFundDonationInterface[]) => fundDonations = data));
   await Promise.all(promises);
   donations.forEach((d) => {
     const person = people.find(p => p.id === d.personId);
@@ -243,11 +249,11 @@ const getDonations = async () => {
 
 const getAttendance = async () => {
   const promises = [];
-  promises.push(ApiHelper.get("/sessions", "AttendanceApi").then((data: any) => sessions = data));
-  promises.push(ApiHelper.get("/visits", "AttendanceApi").then((data: any) => visits = data));
-  promises.push(ApiHelper.get("/visitsessions", "AttendanceApi").then((data: any) => visitSessions = data));
+  promises.push(ApiHelper.get("/sessions", "AttendanceApi").then((data: ImportSessionInterface[]) => sessions = data));
+  promises.push(ApiHelper.get("/visits", "AttendanceApi").then((data: ImportVisitInterface[]) => visits = data));
+  promises.push(ApiHelper.get("/visitsessions", "AttendanceApi").then((data: ImportVisitSessionInterface[]) => visitSessions = data));
   await Promise.all(promises);
-  const data: any[] = [];
+  const data: Record<string, unknown>[] = [];
   visitSessions.forEach((vs) => {
     const visit: ImportVisitInterface = ImportHelper.getById(visits, vs.visitId);
     const session: ImportSessionInterface = ImportHelper.getById(sessions, vs.sessionId);

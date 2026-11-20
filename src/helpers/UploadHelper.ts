@@ -3,6 +3,12 @@ import FileSaver from "file-saver";
 import { Buffer } from "buffer";
 import JSZip from "jszip";
 import * as XLSX from "xlsx";
+
+// One parsed CSV row, keyed by header. Blank cells are removed by getStrippedRecord.
+export type CsvRow = Record<string, string>;
+// One parsed spreadsheet row. Dates are normalized to ISO strings; other cells keep their XLSX type.
+export type SheetRow = Record<string, string | number | boolean>;
+
 export class UploadHelper {
 
   static zipFiles(files: { name: string, contents: string | Buffer }[], zipFileName: string) {
@@ -60,16 +66,16 @@ export class UploadHelper {
     else return null;
   }
 
-  static readCsvString(csv: string) {
-    const result = [];
-    const data = Papa.parse(csv, {
+  static readCsvString<T = CsvRow>(csv: string) {
+    const result: T[] = [];
+    const data = Papa.parse<T>(csv, {
       header: true,
       transformHeader: function(h) {
         return h.trim();
       }
     });
     for (let i = 0; i < data.data.length; i++) {
-      const r: any = this.getStrippedRecord(data.data[i]);
+      const r: T = this.getStrippedRecord(data.data[i]);
       result.push(r);
     }
     return result;
@@ -81,10 +87,10 @@ export class UploadHelper {
       reader.onload = () => {
         const result = [];
         const csv = reader.result.toString();
-        const data = Papa.parse(csv, { header: true });
+        const data = Papa.parse<CsvRow>(csv, { header: true });
 
         for (let i = 0; i < data.data.length; i++) {
-          const r: any = this.getStrippedRecord(data.data[i]);
+          const r: CsvRow = this.getStrippedRecord(data.data[i]);
           result.push(r);
         }
         resolve(result);
@@ -102,13 +108,13 @@ export class UploadHelper {
     // read as the bare number — otherwise new Date("26148") parses it as the year 26148.
     const workbook = XLSX.read(arrayBuffer, { cellDates: true });
     const worksheets = Object.values(workbook.Sheets);
-    const data: any = {};
+    const data: Record<string, SheetRow[]> = {};
     const sheetNames = workbook.SheetNames;
     worksheets.forEach((sheet, i) => {
-      const rows = XLSX.utils.sheet_to_json(sheet, { header: 0 }) as any[];
+      const rows = XLSX.utils.sheet_to_json<Record<string, string | number | boolean | Date>>(sheet, { header: 0 });
       // Normalize dates to ISO strings so downstream (mapping UI, CSV mapper) stays string-only.
       rows.forEach(r => Object.keys(r).forEach(k => { if (r[k] instanceof Date) r[k] = (r[k] as Date).toISOString(); }));
-      data[sheetNames[i]] = rows;
+      data[sheetNames[i]] = rows as SheetRow[];
     });
     return data;
   }
@@ -142,11 +148,12 @@ export class UploadHelper {
     });
   }
 
-  static getStrippedRecord(r: any) {
-    const names = Object.getOwnPropertyNames(r);
+  static getStrippedRecord<T>(r: T): T {
+    const record = r as Record<string, unknown>;
+    const names = Object.getOwnPropertyNames(record);
     for (let j = names.length - 1; j >= 0; j--) {
       const n = names[j];
-      if (r[n] === "") delete r[n];
+      if (record[n] === "") delete record[n];
     }
     return r;
   }

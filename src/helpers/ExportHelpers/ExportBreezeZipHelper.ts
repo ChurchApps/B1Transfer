@@ -13,7 +13,7 @@ const generateBreezeZip = async (importData: ImportDataInterface, updateProgress
 
   const runImport = (keyName: string, code: () => void) => runStep(keyName, updateProgress, code);
 
-  const files: { name: string, contents: any }[] = [];
+  const files: { name: string, contents: string | Buffer }[] = [];
 
   exportCampuses(importData, runImport);
 
@@ -42,7 +42,7 @@ const generateBreezeZip = async (importData: ImportDataInterface, updateProgress
 
 };
 const exportCampuses = async (_importData: ImportDataInterface, runImport: (keyName: string, code: () => void) => Promise<void>) => {
-  const data: any[] = [];
+  const data: Record<string, unknown>[] = [];
   await runImport("Campuses/Services/Times", async () => {
   });
   return data;
@@ -51,7 +51,7 @@ const exportCampuses = async (_importData: ImportDataInterface, runImport: (keyN
 const exportPeople = async (importData: ImportDataInterface, runImport: (keyName: string, code: () => void) => Promise<void>) => {
   const { people } = importData;
   const tmpHouseholds: ImportHouseholdInterface[] = [...importData.households];
-  const data: any[] = [];
+  const data: Record<string, unknown>[] = [];
   await runImport("People", async () => {
     people.forEach((p) => {
       const household = tmpHouseholds.find(h => p.householdKey === h.importKey);
@@ -94,7 +94,7 @@ const exportPeople = async (importData: ImportDataInterface, runImport: (keyName
 
 const exportGroups = async (importData : ImportDataInterface, runImport: (keyName: string, code: () => void) => Promise<void>) => {
   const { groups, groupServiceTimes } = importData;
-  const data: any[] = [];
+  const data: Record<string, unknown>[] = [];
   await runImport("Groups", async () => {
     groups.forEach((g) => {
       let serviceTimeIds: string[] = [];
@@ -118,7 +118,7 @@ const exportGroups = async (importData : ImportDataInterface, runImport: (keyNam
 
 const exportDonations = async (importData : ImportDataInterface, runImport: (keyName: string, code: () => void) => Promise<void>) => {
   const { batches, donations } = importData;
-  const data: any[] = [];
+  const data: Record<string, unknown>[] = [];
 
   await runImport("Funds", async () => {
   });
@@ -171,7 +171,7 @@ const exportForms = async (_importData : ImportDataInterface, runImport: (keyNam
 
 const exportPhotos = async (people: PersonInterface[], files: { name: string, contents: string | Buffer }[], runImport: (keyName: string, code: () => void) => Promise<void>) => {
   await runImport("Photos", async () => {
-    const result: Promise<any>[] = [];
+    const result: Promise<void>[] = [];
     people.forEach(async (p) => {
       if (p.photoUpdated !== undefined) result.push(UploadHelper.downloadImageBytes(files, p.id.toString() + ".png", p.photo));
     });

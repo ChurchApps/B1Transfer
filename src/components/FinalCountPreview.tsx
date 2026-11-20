@@ -1,3 +1,4 @@
+import type { ReactElement } from "react";
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material";
 import { ImportDataInterface } from "../helpers/ImportHelper";
 import { DisplayBox } from "@churchapps/apphelper";
@@ -15,7 +16,7 @@ export const FinalCountPreview = (props: Props) => {
   };
 
   const getRows = () => {
-    const rows: any[] = [];
+    const rows: ReactElement[] = [];
     const keys = Object.keys(props.b1Data);
     keys.forEach((key, index) => {
       // Optional categories (custom fields) can be missing from either side.

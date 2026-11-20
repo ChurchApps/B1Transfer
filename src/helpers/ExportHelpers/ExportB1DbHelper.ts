@@ -9,6 +9,8 @@ import {
   , ImportHouseholdPickupInterface, ImportListInterface
 } from "../ImportHelper";
 import { ApiHelper } from "..";
+import type { AnswerInterface, ApiListType, QuestionInterface } from "@churchapps/helpers";
+import type { ListRuleGroupInterface, ListConditionInterface, ListActionInterface } from "../ImportHelper";
 import { runStep } from "./RunStep";
 
 const BATCH_SIZE = 1000;
@@ -16,7 +18,7 @@ const BATCH_SIZE = 1000;
 const PERSON_FIELD_BATCH_SIZE = 200;
 const MAX_RETRIES = 3;
 
-export interface UndoEntry { endpoint: string; apiName: any; id: string }
+export interface UndoEntry { endpoint: string; apiName: ApiListType; id: string }
 
 // Endpoints the Api's audit registry marks batch-capable. Only these accept X-Batch-Id;
 // any other route 400s when the header is present, so the batch header is scoped to just these.
@@ -42,7 +44,7 @@ let undoLog: UndoEntry[] = [];
 
 // Set only while an import is running; the request hook stamps the header on batch-capable calls.
 let activeBatchId: string | undefined;
-const batchRequestHook = (url: string, requestOptions: any) => {
+const batchRequestHook = (url: string, requestOptions: RequestInit) => {
   if (activeBatchId && BATCH_CAPABLE.some(e => url.endsWith(e))) {
     requestOptions.headers = { ...(requestOptions.headers || {}), "X-Batch-Id": activeBatchId };
   }
@@ -51,7 +53,7 @@ const batchRequestHook = (url: string, requestOptions: any) => {
 const postInBatches = async <T extends { id?: string }>(
   endpoint: string,
   data: T[],
-  apiName: any,
+  apiName: ApiListType,
   progressCallback?: (current: number, total: number, isComplete: boolean) => void
 ): Promise<T[]> => {
   const results: T[] = [];
@@ -333,9 +335,9 @@ type ListIdMaps = Record<"group" | "form" | "field" | "giving" | "campus" | "ser
 // Points every rule and action at the ids this church gave the imported records. Ids with no
 // match are left alone, which is right when restoring into the church the zip came from.
 const remapListIds = (list: ImportListInterface, maps: ListIdMaps) => {
-  const walk = (group: any) => {
+  const walk = (group: ListRuleGroupInterface) => {
     if (!group) return;
-    (group.conditions || []).forEach((c: any) => {
+    (group.conditions || []).forEach((c: ListConditionInterface) => {
       if (!c?.entityId) return;
       const kind = c.provider === "attendance" ? c.entityType : c.provider;
       const map = (maps as Record<string, Map<string, string>>)[kind];
@@ -344,12 +346,12 @@ const remapListIds = (list: ImportListInterface, maps: ListIdMaps) => {
     (group.groups || []).forEach(walk);
   };
   walk(list.rules);
-  (Array.isArray(list.actions) ? list.actions : []).forEach((a: any) => {
+  (Array.isArray(list.actions) ? list.actions : []).forEach((a: ListActionInterface) => {
     if (a?.groupId && maps.group.has(a.groupId)) a.groupId = maps.group.get(a.groupId);
   });
 };
 
-const referencesLists = (group: any): boolean => !!group && ((group.conditions || []).some((c: any) => c?.provider === "list") || (group.groups || []).some(referencesLists));
+const referencesLists = (group: ListRuleGroupInterface): boolean => !!group && ((group.conditions || []).some((c: ListConditionInterface) => c?.provider === "list") || (group.groups || []).some(referencesLists));
 
 const exportLists = async (exportData: ImportDataInterface, maps: ListIdMaps, runImport: (keyName: string, code: () => void) => Promise<void>) => {
   const tmpLists: ImportListInterface[] = (exportData.lists || []).map(l => ({ ...l, id: undefined as string | undefined, rules: structuredClone(l.rules), actions: structuredClone(l.actions) }));
@@ -482,9 +484,9 @@ const exportForms = async (exportData: ImportDataInterface, tmpPeople: ImportPer
         fs.formId = form.id;
         fs.contentId = content.id;
 
-        const fsKey = (fs as any).importKey;
-        const questions: any[] = [];
-        const answers: any[] = [];
+        const fsKey = fs.importKey;
+        const questions: QuestionInterface[] = [];
+        const answers: AnswerInterface[] = [];
         tmpQuestions.forEach(q => {
           if (q.formId === form.id) {
             questions.push(q);

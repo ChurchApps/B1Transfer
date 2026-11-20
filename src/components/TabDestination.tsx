@@ -45,7 +45,7 @@ export const TabDestination = (props: Props) => {
   const context = React.useContext(UserContext);
   const [b1Data, setB1Data] = useState<ImportDataInterface>();
   const [loginError, setLoginError] = useState<boolean>(false);
-  const progress: any = {};
+  const progress: Record<string, string> = {};
 
   const setProgress = (name: string, status: string) => {
     progress[name] = status;

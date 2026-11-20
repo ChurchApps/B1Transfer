@@ -8,9 +8,13 @@ import {
   , ImportQuestionsInterface, ImportFormSubmissions, ImportAnswerInterface
 } from "../ImportHelper";
 import Papa from "papaparse";
+import type { CsvRow } from "../UploadHelper";
 import { ContactInfoInterface, NameInterface } from "..";
 
-const getCol = (row: any, ...candidates: string[]) => {
+// The CCB family id rides on the person only until households are assigned.
+type CcbPersonInterface = ImportPersonInterface & { ccbFamilyId?: string };
+
+const getCol = (row: CsvRow, ...candidates: string[]) => {
   for (const c of candidates) {
     if (row[c] !== undefined && row[c] !== null) return row[c];
   }
@@ -39,8 +43,8 @@ const readCCBCsv = async (file: File): Promise<ImportDataInterface> => {
   const answers: ImportAnswerInterface[] = [];
 
   const text = await file.text();
-  const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
-  const data = parsed.data as any[];
+  const parsed = Papa.parse<CsvRow>(text, { header: true, skipEmptyLines: true });
+  const data = parsed.data;
 
   if (data.length > 0) {
     const cols = Object.keys(data[0]);
@@ -79,7 +83,7 @@ const readCCBCsv = async (file: File): Promise<ImportDataInterface> => {
 };
 
 const assignHousehold = (households: ImportHouseholdInterface[], person: ImportPersonInterface) => {
-  const familyId = (person as any).ccbFamilyId;
+  const familyId = (person as CcbPersonInterface).ccbFamilyId;
   const householdName: string = person.name.last || "";
 
   if (familyId) {
@@ -99,7 +103,7 @@ const assignHousehold = (households: ImportHouseholdInterface[], person: ImportP
   person.householdKey = households[households.length - 1].importKey;
 };
 
-const loadPeople = (data: any[], people: ImportPersonInterface[], households: ImportHouseholdInterface[]) => {
+const loadPeople = (data: CsvRow[], people: ImportPersonInterface[], households: ImportHouseholdInterface[]) => {
   for (let i = 0; i < data.length; i++) {
     const row = data[i];
     const firstName = getCol(row, "First Name", "first_name", "FirstName");
@@ -136,14 +140,14 @@ const loadPeople = (data: any[], people: ImportPersonInterface[], households: Im
       householdId: getCol(row, "Family ID", "family_id", "Household ID")
     } as ImportPersonInterface;
 
-    (p as any).ccbFamilyId = getCol(row, "Family ID", "family_id", "Household ID");
+    (p as CcbPersonInterface).ccbFamilyId = getCol(row, "Family ID", "family_id", "Household ID");
     assignHousehold(households, p);
-    delete (p as any).ccbFamilyId;
+    delete (p as CcbPersonInterface).ccbFamilyId;
     people.push(p);
   }
 };
 
-const loadDonations = (data: any[], people: ImportPersonInterface[], batches: ImportDonationBatchInterface[], funds: ImportFundInterface[], donations: ImportDonationInterface[], fundDonations: ImportFundDonationInterface[]) => {
+const loadDonations = (data: CsvRow[], people: ImportPersonInterface[], batches: ImportDonationBatchInterface[], funds: ImportFundInterface[], donations: ImportDonationInterface[], fundDonations: ImportFundDonationInterface[]) => {
   for (let i = 0; i < data.length; i++) {
     const row = data[i];
     const amountStr = getCol(row, "Amount", "amount", "Total");

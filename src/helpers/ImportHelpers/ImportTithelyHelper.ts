@@ -1,4 +1,4 @@
-import { UploadHelper } from "../UploadHelper";
+import { UploadHelper, CsvRow, SheetRow } from "../UploadHelper";
 import {
   ImportHelper, ImportPersonInterface, ImportHouseholdInterface
   , ImportCampusInterface, ImportServiceInterface, ImportServiceTimeInterface
@@ -11,9 +11,13 @@ import {
 import Papa from "papaparse";
 import { ContactInfoInterface, NameInterface } from "..";
 
-const getCol = (row: any, ...candidates: string[]) => {
+// The Tithe.ly family id rides on the person only until households are assigned.
+type TithelyPersonInterface = ImportPersonInterface & { tithelyFamilyId?: string };
+
+// Cells are treated as text; a numeric spreadsheet cell still comes back as the number XLSX read.
+const getCol = (row: SheetRow, ...candidates: string[]) => {
   for (const c of candidates) {
-    if (row[c] !== undefined && row[c] !== null) return row[c];
+    if (row[c] !== undefined && row[c] !== null) return row[c] as string;
   }
   return "";
 };
@@ -40,7 +44,7 @@ const readTithelyCsv = async (file: File): Promise<ImportDataInterface> => {
   const answers: ImportAnswerInterface[] = [];
 
   const ext = file.name.split(".").pop()?.toLowerCase();
-  let data: any[];
+  let data: CsvRow[];
 
   if (ext === "xlsx" || ext === "xls") {
     const reader = new FileReader();
@@ -62,8 +66,8 @@ const readTithelyCsv = async (file: File): Promise<ImportDataInterface> => {
     if (groupsSheet) loadGroups(sheets[groupsSheet], groups, groupMembers);
   } else {
     const text = await file.text();
-    const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
-    data = parsed.data as any[];
+    const parsed = Papa.parse<CsvRow>(text, { header: true, skipEmptyLines: true });
+    data = parsed.data;
 
     if (data.length > 0) {
       const cols = Object.keys(data[0]).map(c => c.toLowerCase());
@@ -102,7 +106,7 @@ const readTithelyCsv = async (file: File): Promise<ImportDataInterface> => {
 };
 
 const assignHousehold = (households: ImportHouseholdInterface[], person: ImportPersonInterface) => {
-  const familyId = (person as any).tithelyFamilyId;
+  const familyId = (person as TithelyPersonInterface).tithelyFamilyId;
   const householdName: string = familyId || person.name.last || "";
 
   if (familyId) {
@@ -119,7 +123,7 @@ const assignHousehold = (households: ImportHouseholdInterface[], person: ImportP
   person.householdKey = households[households.length - 1].importKey;
 };
 
-const loadPeople = (data: any[], people: ImportPersonInterface[], households: ImportHouseholdInterface[]) => {
+const loadPeople = (data: SheetRow[], people: ImportPersonInterface[], households: ImportHouseholdInterface[]) => {
   for (let i = 0; i < data.length; i++) {
     const row = data[i];
     const firstName = getCol(row, "first_name", "First Name", "FirstName", "first");
@@ -156,14 +160,14 @@ const loadPeople = (data: any[], people: ImportPersonInterface[], households: Im
       householdId: getCol(row, "family_id", "Family ID", "household_id")
     } as ImportPersonInterface;
 
-    (p as any).tithelyFamilyId = getCol(row, "family_id", "Family ID", "household_id");
+    (p as TithelyPersonInterface).tithelyFamilyId = getCol(row, "family_id", "Family ID", "household_id");
     assignHousehold(households, p);
-    delete (p as any).tithelyFamilyId;
+    delete (p as TithelyPersonInterface).tithelyFamilyId;
     people.push(p);
   }
 };
 
-const loadDonations = (data: any[], people: ImportPersonInterface[], batches: ImportDonationBatchInterface[], funds: ImportFundInterface[], donations: ImportDonationInterface[], fundDonations: ImportFundDonationInterface[]) => {
+const loadDonations = (data: SheetRow[], people: ImportPersonInterface[], batches: ImportDonationBatchInterface[], funds: ImportFundInterface[], donations: ImportDonationInterface[], fundDonations: ImportFundDonationInterface[]) => {
   for (let i = 0; i < data.length; i++) {
     const row = data[i];
     const amountStr = getCol(row, "amount", "Amount", "total", "Total");
@@ -203,7 +207,7 @@ const loadDonations = (data: any[], people: ImportPersonInterface[], batches: Im
   }
 };
 
-const loadGroups = (data: any[], groups: ImportGroupInterface[], groupMembers: ImportGroupMemberInterface[]) => {
+const loadGroups = (data: SheetRow[], groups: ImportGroupInterface[], groupMembers: ImportGroupMemberInterface[]) => {
   for (let i = 0; i < data.length; i++) {
     const row = data[i];
     const groupName = getCol(row, "group_name", "Group Name", "group", "Group", "name", "Name");

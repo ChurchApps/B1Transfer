@@ -21,6 +21,6 @@ export const runStep = async (
   }
 };
 
-export const compressZip = (files: { name: string, contents: any }[], filename: string) => {
+export const compressZip = (files: { name: string, contents: string | Buffer }[], filename: string) => {
   UploadHelper.zipFiles(files, filename);
 };

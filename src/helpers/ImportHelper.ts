@@ -1,3 +1,4 @@
+import type { CsvRow } from "./UploadHelper";
 import { PersonInterface, CampusInterface, ServiceInterface, ServiceTimeInterface, GroupInterface, GroupMemberInterface, GroupServiceTimeInterface, HouseholdInterface, SessionInterface, VisitInterface, VisitSessionInterface, DonationBatchInterface, FundInterface, DonationInterface, FundDonationInterface, ArrayHelper, FormInterface, QuestionInterface, FormSubmissionInterface, AnswerInterface } from "./";
 
 export interface ImportCampusInterface extends CampusInterface { importKey: string }
@@ -63,6 +64,12 @@ export interface ImportHouseholdPickupInterface {
   status?: string
   notes?: string
 }
+// One condition in a saved list's rules. Only the fields the import remaps are spelled out.
+export interface ListConditionInterface { provider?: string, entityType?: string, entityId?: string, [key: string]: unknown }
+// A group of list conditions; groups nest.
+export interface ListRuleGroupInterface { conditions?: ListConditionInterface[], groups?: ListRuleGroupInterface[], [key: string]: unknown }
+// An action a saved list runs on its members.
+export interface ListActionInterface { groupId?: string, [key: string]: unknown }
 // A saved people list. Members are recomputed from the rules, so only the definition travels.
 export interface ImportListInterface {
   importKey: string
@@ -73,9 +80,9 @@ export interface ImportListInterface {
   householdInclusion?: string
   autoRefresh?: boolean
   notifyOnChange?: boolean
-  rules?: any
-  actions?: any
-  conditions?: any
+  rules?: ListRuleGroupInterface
+  actions?: ListActionInterface[]
+  conditions?: unknown
 }
 // Custom person field definition. Values are matched to these by name on upload.
 export interface ImportPersonFieldInterface { id?: string, importKey: string, name: string, fieldType?: string, choices?: string, sort?: number }
@@ -112,10 +119,10 @@ export class ImportHelper {
   //get one
   static getPerson(people: ImportPersonInterface[], importKey: string) { return ArrayHelper.getOne(people, "importKey", importKey) as ImportPersonInterface; }
   static getServiceTime(serviceTimes: ImportServiceTimeInterface[], importKey: string) { return ArrayHelper.getOne(serviceTimes, "importKey", importKey) as ImportServiceTimeInterface; }
-  static getByImportKey(items: any[], importKey: string) { return ArrayHelper.getOne(items, "importKey", importKey); }
-  static getById(items: any[], id: string) { return ArrayHelper.getOne(items, "id", id); }
+  static getByImportKey<T>(items: T[], importKey: string): T { return ArrayHelper.getOne(items, "importKey", importKey); }
+  static getById<T>(items: T[], id: string): T { return ArrayHelper.getOne(items, "id", id); }
   // The id of the household with this import key, or undefined when the key is blank or unmatched.
-  static householdIdFor(households: any[], householdKey?: string): string | undefined {
+  static householdIdFor(households: { id?: string, importKey?: string }[], householdKey?: string): string | undefined {
     if (!householdKey) return undefined;
     return this.getByImportKey(households, householdKey)?.id;
   }
@@ -220,7 +227,7 @@ export class ImportHelper {
     return result;
   }
 
-  static getOrCreateVisit(visits: ImportVisitInterface[], data: any, serviceTimes: ImportServiceTimeInterface[]) {
+  static getOrCreateVisit(visits: ImportVisitInterface[], data: CsvRow, serviceTimes: ImportServiceTimeInterface[]) {
     const serviceTime: ImportServiceTimeInterface = this.getByImportKey(serviceTimes, data.serviceTimeKey);
     const serviceKey = (serviceTime === null) ? "" : serviceTime.serviceKey;
     const sameDay = (a: unknown, b: unknown) => {
@@ -277,7 +284,7 @@ export class ImportHelper {
     return result;
   }
 
-  static getOrCreateServiceTime(serviceTimes: ImportServiceTimeInterface[], data: any, service: ImportServiceInterface) {
+  static getOrCreateServiceTime(serviceTimes: ImportServiceTimeInterface[], data: CsvRow, service: ImportServiceInterface) {
     if (service === null || data.importKey === undefined || data.importKey === null || data.importKey === "") return null;
     let result: ImportServiceTimeInterface = this.getByImportKey(serviceTimes, data.serviceTimeKey);
     if (result === null) {
@@ -297,7 +304,8 @@ export class ImportHelper {
     return result;
   }
 
-  static getOrCreateGroup(groups: ImportGroupInterface[], data: any) {
+  // The groups.csv row object itself becomes the group, so it is typed as either.
+  static getOrCreateGroup(groups: ImportGroupInterface[], data: CsvRow | ImportGroupInterface) {
     let result = this.getByImportKey(groups, data.importKey) as ImportGroupInterface;
     if (result === null) {
       result = data as ImportGroupInterface;

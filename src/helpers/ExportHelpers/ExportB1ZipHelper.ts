@@ -44,7 +44,7 @@ const campusCells = (campus?: ImportCampusInterface) => ({
 });
 
 // A blank id or key must not match rows that simply lack that property.
-const byIdOrKey = (items: any[], id?: string, key?: string) => (id ? ImportHelper.getById(items, id) : null) || (key ? ImportHelper.getByImportKey(items, key) : null);
+const byIdOrKey = <T>(items: T[], id?: string, key?: string) => (id ? ImportHelper.getById(items, id) : null) || (key ? ImportHelper.getByImportKey(items, key) : null);
 
 const findCampus = (importData: ImportDataInterface, id?: string, key?: string) => {
   if (id) {
@@ -61,7 +61,7 @@ const findFund = (funds: ImportFundInterface[], id?: string) => {
 };
 
 export const buildB1ZipFiles = async (importData: ImportDataInterface, updateProgress: (name: string, status: string) => void) => {
-  const files: { name: string, contents: any }[] = [];
+  const files: { name: string, contents: string | Buffer }[] = [];
   const runImport = (keyName: string, code: () => Promise<void>) => runStep(keyName, updateProgress, code);
 
   files.push({ name: "services.csv", contents: await exportCampuses(importData, runImport) });
@@ -90,7 +90,7 @@ const generateB1Zip = async (importData: ImportDataInterface, updateProgress: (n
 
 const exportCampuses = async (importData: ImportDataInterface, runImport: (keyName: string, code: () => Promise<void>) => Promise<void>) => {
   const { campuses, services, serviceTimes } = importData;
-  const data: any[] = [];
+  const data: Record<string, unknown>[] = [];
   await runImport("Campuses/Services/Times", async () => {
     const seenServiceIds = new Set<string>();
     const seenCampusIds = new Set<string>();
@@ -154,7 +154,7 @@ const exportCampuses = async (importData: ImportDataInterface, runImport: (keyNa
 
 const exportGroupMembers = async (importData: ImportDataInterface, runImport: (keyName: string, code: () => Promise<void>) => Promise<void>) => {
   const { groupMembers } = importData;
-  const data: any[] = [];
+  const data: Record<string, unknown>[] = [];
   await runImport("Group Members", async () => {
     groupMembers.forEach((gm) => {
       data.push({
@@ -169,7 +169,7 @@ const exportGroupMembers = async (importData: ImportDataInterface, runImport: (k
 
 const exportPeople = async (importData: ImportDataInterface, runImport: (keyName: string, code: () => Promise<void>) => Promise<void>) => {
   const tmpHouseholds: ImportHouseholdInterface[] = [...importData.households];
-  const data: any[] = [];
+  const data: Record<string, unknown>[] = [];
   const { people } = importData;
   await runImport("People", async () => {
     people.forEach((p) => {
@@ -218,7 +218,7 @@ const exportPeople = async (importData: ImportDataInterface, runImport: (keyName
 
 const exportGroups = async (importData: ImportDataInterface, runImport: (keyName: string, code: () => Promise<void>) => Promise<void>) => {
   const { groups, groupServiceTimes } = importData;
-  const data: any[] = [];
+  const data: Record<string, unknown>[] = [];
   await runImport("Groups", async () => {
     groups.forEach((g) => {
       const groupId = g.id || g.importKey;
@@ -271,7 +271,7 @@ const exportGroups = async (importData: ImportDataInterface, runImport: (keyName
 
 const exportDonations = async (importData: ImportDataInterface, runImport: (keyName: string, code: () => Promise<void>) => Promise<void>) => {
   const { funds, batches, donations, fundDonations } = importData;
-  const data: any[] = [];
+  const data: Record<string, unknown>[] = [];
 
   await runImport("Funds", async () => {
   });
@@ -318,7 +318,7 @@ const exportDonations = async (importData: ImportDataInterface, runImport: (keyN
 
 const exportAttendance = async (importData: ImportDataInterface, runImport: (keyName: string, code: () => Promise<void>) => Promise<void>) => {
   const { sessions, visits, visitSessions } = importData;
-  const data: any[] = [];
+  const data: Record<string, unknown>[] = [];
   await runImport("Attendance", async () => {
     visitSessions.forEach((vs) => {
       const visit: ImportVisitInterface = byIdOrKey(visits, vs.visitId, vs.visitKey);
@@ -340,7 +340,7 @@ const exportAttendance = async (importData: ImportDataInterface, runImport: (key
 
 const exportForms = async (importData: ImportDataInterface, runImport: (keyName: string, code: () => Promise<void>) => Promise<void>) => {
   const { forms } = importData;
-  const data: any[] = [];
+  const data: Record<string, unknown>[] = [];
   await runImport("Forms", async () => {
     forms.forEach((f) => {
       data.push({
@@ -366,7 +366,7 @@ const exportForms = async (importData: ImportDataInterface, runImport: (keyName:
 
 const exportQuestions = async (importData: ImportDataInterface, runImport: (keyName: string, code: () => Promise<void>) => Promise<void>) => {
   const { questions } = importData;
-  const data: any[] = [];
+  const data: Record<string, unknown>[] = [];
   await runImport("Questions", async () => {
     questions.forEach(q => {
       data.push({
@@ -388,7 +388,7 @@ const exportQuestions = async (importData: ImportDataInterface, runImport: (keyN
 
 const exportAnswers = async (importData: ImportDataInterface, runImport: (keyName: string, code: () => Promise<void>) => Promise<void>) => {
   const { answers } = importData;
-  const data: any[] = [];
+  const data: Record<string, unknown>[] = [];
   await runImport("Answers", async () => {
     answers.forEach(a => {
       data.push({
@@ -403,7 +403,7 @@ const exportAnswers = async (importData: ImportDataInterface, runImport: (keyNam
 
 const exportFormSubmissions = async (importData: ImportDataInterface, runImport: (keyName: string, code: () => Promise<void>) => Promise<void>) => {
   const { formSubmissions } = importData;
-  const data: any[] = [];
+  const data: Record<string, unknown>[] = [];
   await runImport("Form Submissions", async () => {
     formSubmissions.forEach(fs => {
       // importKey carries the submission id so answers.csv (which references it) can be
@@ -422,7 +422,7 @@ const exportFormSubmissions = async (importData: ImportDataInterface, runImport:
 
 // donations.csv only names funds that were given to, so every fund is listed here too.
 const exportFunds = async (importData: ImportDataInterface, runImport: (keyName: string, code: () => Promise<void>) => Promise<void>) => {
-  const data: any[] = [];
+  const data: Record<string, unknown>[] = [];
   await runImport("Fund List", async () => {
     importData.funds.forEach(f => {
       data.push({ name: f.name, taxDeductible: yn(f.taxDeductible), visible: yn(f.visible) });
@@ -432,7 +432,7 @@ const exportFunds = async (importData: ImportDataInterface, runImport: (keyName:
 };
 
 const exportPersonFields = async (importData: ImportDataInterface, runImport: (keyName: string, code: () => Promise<void>) => Promise<void>) => {
-  const data: any[] = [];
+  const data: Record<string, unknown>[] = [];
   await runImport("Custom Field Definitions", async () => {
     (importData.personFields || []).forEach(f => {
       data.push({
@@ -448,7 +448,7 @@ const exportPersonFields = async (importData: ImportDataInterface, runImport: (k
 };
 
 const exportPersonFieldValues = async (importData: ImportDataInterface, runImport: (keyName: string, code: () => Promise<void>) => Promise<void>) => {
-  const data: any[] = [];
+  const data: Record<string, unknown>[] = [];
   await runImport("Custom Field Values", async () => {
     (importData.personFieldValues || []).forEach(v => {
       data.push({ personKey: v.personKey, fieldName: v.fieldName, value: v.value });
@@ -458,7 +458,7 @@ const exportPersonFieldValues = async (importData: ImportDataInterface, runImpor
 };
 
 const exportHouseholdPickups = async (importData: ImportDataInterface, runImport: (keyName: string, code: () => Promise<void>) => Promise<void>) => {
-  const data: any[] = [];
+  const data: Record<string, unknown>[] = [];
   await runImport("Household Pickup Contacts", async () => {
     (importData.householdPickupPeople || []).forEach(p => {
       data.push({
@@ -477,7 +477,7 @@ const exportHouseholdPickups = async (importData: ImportDataInterface, runImport
 
 // Rules and actions keep the source church's ids; the database writer remaps them on restore.
 const exportLists = async (importData: ImportDataInterface, runImport: (keyName: string, code: () => Promise<void>) => Promise<void>) => {
-  const data: any[] = [];
+  const data: Record<string, unknown>[] = [];
   await runImport("Lists", async () => {
     (importData.lists || []).forEach(l => {
       data.push({
@@ -499,7 +499,7 @@ const exportLists = async (importData: ImportDataInterface, runImport: (keyName:
 
 const exportPhotos = async (people: ImportPersonInterface[], files: { name: string, contents: string | Buffer }[], runImport: (keyName: string, code: () => Promise<void>) => Promise<void>) => {
   await runImport("Photos", async () => {
-    const result: Promise<any>[] = [];
+    const result: Promise<void>[] = [];
     for (const p of people) {
       if (p.photoUpdated !== undefined && p.photo) result.push(UploadHelper.downloadImageBytes(files, (p.id || p.importKey) + ".png", p.photo));
     }
