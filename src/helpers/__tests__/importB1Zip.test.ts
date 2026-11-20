@@ -5,6 +5,9 @@ import readB1Zip from "../ImportHelpers/ImportB1ZipHelper";
 import exportToB1Db from "../ExportHelpers/ExportB1DbHelper";
 import { ApiHelper } from "..";
 
+// A row the import posted to the Api, as captured by the stubbed ApiHelper.post.
+type PostedRow = Record<string, unknown>;
+
 // Issue #1258: a church's own B1 export includes attendance for groups that were later
 // deleted, so attendance.csv can reference a groupKey that isn't in groups.csv.
 test("a B1 zip with attendance for a deleted group loads and skips those rows", async () => {
@@ -51,10 +54,10 @@ test("restoring a B1 zip with sessions for blank or deleted service times and de
   const data = await zip.generateAsync({ type: "uint8array" });
   const importData = await readB1Zip(data as unknown as File);
 
-  const posted: Record<string, any[]> = {};
+  const posted: Record<string, PostedRow[]> = {};
   const originalPost = ApiHelper.post;
   let nextId = 1;
-  ApiHelper.post = (async (path: string, body: any) => {
+  ApiHelper.post = (async (path: string, body: PostedRow[]) => {
     posted[path] = body;
     return Array.isArray(body) ? body.map(() => ({ id: `id${nextId++}` })) : { id: `id${nextId++}` };
   }) as typeof ApiHelper.post;
@@ -67,12 +70,12 @@ test("restoring a B1 zip with sessions for blank or deleted service times and de
 
   assert.equal(statuses["Attendance"], "complete");
   assert.equal(posted["/sessions"].length, 3);
-  const unmatched = posted["/sessions"].filter((s: any) => s.serviceTimeKey !== "1");
+  const unmatched = posted["/sessions"].filter((s) => s.serviceTimeKey !== "1");
   assert.equal(unmatched.length, 2);
-  assert.equal(unmatched.every((s: any) => s.serviceTimeId === undefined), true);
+  assert.equal(unmatched.every((s) => s.serviceTimeId === undefined), true);
   assert.equal(posted["/visits"].length, 3);
-  assert.equal(posted["/visits"].every((v: any) => v.personId), true);
-  assert.equal(posted["/visitsessions"].every((vs: any) => vs.visitId && vs.sessionId), true);
+  assert.equal(posted["/visits"].every((v) => v.personId), true);
+  assert.equal(posted["/visitsessions"].every((vs) => vs.visitId && vs.sessionId), true);
 });
 
 // formSubmissions.csv holds submissionDate as text. Loading turns it into a Date, and a blank or

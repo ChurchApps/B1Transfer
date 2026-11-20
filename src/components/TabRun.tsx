@@ -33,7 +33,7 @@ export const TabRun = (props: Props) => {
     const status = props.status[name];
 
     let icon;
-    let color: any = "text.secondary";
+    let color = "text.secondary";
     let detail = "";
 
     if (status === undefined) {

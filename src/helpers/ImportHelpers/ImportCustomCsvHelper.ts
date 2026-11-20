@@ -1,24 +1,28 @@
 import {
   ImportPersonInterface, ImportHouseholdInterface,
   ImportDataInterface, ImportFormsInterface, ImportQuestionsInterface,
-  ImportFormSubmissions, ImportAnswerInterface, ImportPersonFieldValueInterface
+  ImportFormSubmissions, ImportAnswerInterface, ImportPersonFieldValueInterface,
+  ImportGroupInterface, ImportGroupMemberInterface
 } from "../ImportHelper";
+import type { SheetRow } from "../UploadHelper";
 import { ContactInfoInterface, NameInterface } from "..";
 import { FieldMapping } from "../../types";
 
-const getNestedValue = (row: any, sourceColumn: string): string => row[sourceColumn]?.toString() ?? "";
+const getNestedValue = (row: SheetRow, sourceColumn: string): string => row[sourceColumn]?.toString() ?? "";
 
-const setNestedField = (obj: any, path: string, value: string) => {
+// Sets a mapped field such as "email" or "name.first"; paths are at most two levels deep.
+const setNestedField = <T>(obj: T, path: string, value: string) => {
+  const target = obj as Record<string, string | Record<string, string>>;
   const parts = path.split(".");
   if (parts.length === 1) {
-    obj[parts[0]] = value;
+    target[parts[0]] = value;
   } else {
-    if (!obj[parts[0]]) obj[parts[0]] = {};
-    obj[parts[0]][parts[1]] = value;
+    if (!target[parts[0]]) target[parts[0]] = {};
+    (target[parts[0]] as Record<string, string>)[parts[1]] = value;
   }
 };
 
-const readCustomCsv = (data: any[], mappings: FieldMapping[], formName: string = "Imported Data"): ImportDataInterface => {
+const readCustomCsv = (data: SheetRow[], mappings: FieldMapping[], formName: string = "Imported Data"): ImportDataInterface => {
   const people: ImportPersonInterface[] = [];
   const households: ImportHouseholdInterface[] = [];
   const householdMap = new Map<string, string>();
@@ -29,8 +33,8 @@ const readCustomCsv = (data: any[], mappings: FieldMapping[], formName: string =
   const personFieldMappings = activeMappings.filter(m => m.targetField === "personField" && m.customFieldName?.trim());
 
   const groupMap = new Map<string, string>();
-  const groups: any[] = [];
-  const groupMembers: any[] = [];
+  const groups: Partial<ImportGroupInterface>[] = [];
+  const groupMembers: ImportGroupMemberInterface[] = [];
 
   const forms: ImportFormsInterface[] = [];
   const questions: ImportQuestionsInterface[] = [];
@@ -55,7 +59,7 @@ const readCustomCsv = (data: any[], mappings: FieldMapping[], formName: string =
 
   for (let i = 0; i < data.length; i++) {
     const row = data[i];
-    const person: any = {
+    const person: ImportPersonInterface = {
       importKey: (i + 1).toString(),
       name: { first: "", last: "", middle: "", nick: "", display: "", title: "", suffix: "" } as NameInterface,
       contactInfo: { address1: "", address2: "", city: "", state: "", zip: "", homePhone: "", mobilePhone: "", workPhone: "", email: "" } as ContactInfoInterface

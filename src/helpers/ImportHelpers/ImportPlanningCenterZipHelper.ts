@@ -63,7 +63,8 @@ const readPlanningCenterZip = async (file: File): Promise<ImportDataInterface> =
   } as ImportDataInterface;
 };
 
-const loadPeople = (data: any, people: ImportPersonInterface[], households: ImportHouseholdInterface[]) => {
+// Cells are left unchecked: Planning Center flags such as "Child" come through as text.
+const loadPeople = (data: Record<string, unknown>[], people: ImportPersonInterface[], households: ImportHouseholdInterface[]) => {
   for (let i = 0; i < data.length; i++) {
     if (data[i]["Last Name"] !== undefined) {
       const p = {
@@ -96,7 +97,7 @@ const loadPeople = (data: any, people: ImportPersonInterface[], households: Impo
   }
 };
 
-const assignHousehold = (households: ImportHouseholdInterface[], person: any) => {
+const assignHousehold = (households: ImportHouseholdInterface[], person: ImportPersonInterface & { householdName?: string }) => {
   const householdName: string = person.householdName;
   if (households.length === 0 || households[households.length - 1].name !== householdName) {
     households.push({ name: householdName, importKey: (households.length + 1).toString() } as ImportHouseholdInterface);

@@ -3,7 +3,7 @@ import Papa from "papaparse";
 import { runStep, compressZip } from "./RunStep";
 
 const generatePlanningCenterZip = async (importData: ImportDataInterface, updateProgress: (name: string, status: string) => void) => {
-  const files: { name: string, contents: any }[] = [];
+  const files: { name: string, contents: string | Buffer }[] = [];
 
   const runImport = (keyName: string, code: () => void) => runStep(keyName, updateProgress, code);
 
@@ -45,7 +45,7 @@ const exportGroupMembers = async (_importData : ImportDataInterface, runImport: 
 const exportPeople = async (importData: ImportDataInterface, runImport: (keyName: string, code: () => void) => Promise<void>) => {
   const { people } = importData;
   const tmpHouseholds: ImportHouseholdInterface[] = [...importData.households];
-  const data: any[] = [];
+  const data: Record<string, unknown>[] = [];
   await runImport("People", async () => {
     people.forEach((p) => {
       const household = tmpHouseholds.find(h => p.householdKey === h.importKey);

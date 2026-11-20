@@ -2,12 +2,14 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { UploadHelper } from "../UploadHelper";
 
+type ZipFile = { name: string, contents: string | Buffer };
+
 // Issue #1261: a photo download that fails at the network level never settled,
 // so the export hung on the Photos step forever.
 class FakeXhr {
   static outcome: "error" | "timeout" | "abort" | number = 200;
   status = 0;
-  response: any = null;
+  response: Blob = null;
   responseType = "";
   timeout = 0;
   onload: () => void = null;
@@ -25,7 +27,7 @@ class FakeXhr {
     }, 0);
   }
 }
-(globalThis as any).XMLHttpRequest = FakeXhr;
+(globalThis as { XMLHttpRequest: unknown }).XMLHttpRequest = FakeXhr;
 
 const settles = (p: Promise<void>) => Promise.race([
   p.then(() => "settled"),
@@ -35,7 +37,7 @@ const settles = (p: Promise<void>) => Promise.race([
 for (const outcome of ["error", "timeout", "abort"] as const) {
   test(`a photo download that ends in ${outcome} is skipped instead of hanging`, async () => {
     FakeXhr.outcome = outcome;
-    const files: any[] = [];
+    const files: ZipFile[] = [];
     assert.equal(await settles(UploadHelper.downloadImageBytes(files, "1.png", "https://content/1.png")), "settled");
     assert.equal(files.length, 0);
   });
@@ -43,14 +45,14 @@ for (const outcome of ["error", "timeout", "abort"] as const) {
 
 test("a 404 photo is skipped rather than saved as an image", async () => {
   FakeXhr.outcome = 404;
-  const files: any[] = [];
+  const files: ZipFile[] = [];
   await UploadHelper.downloadImageBytes(files, "1.png", "https://content/1.png");
   assert.equal(files.length, 0);
 });
 
 test("a 200 photo is added to the zip files", async () => {
   FakeXhr.outcome = 200;
-  const files: any[] = [];
+  const files: ZipFile[] = [];
   await UploadHelper.downloadImageBytes(files, "1.png", "https://content/1.png");
   assert.equal(files.length, 1);
   assert.equal(files[0].name, "1.png");
@@ -62,7 +64,7 @@ test("a photo whose bytes can't be read is skipped instead of hanging", async ()
   const original = Blob.prototype.arrayBuffer;
   Blob.prototype.arrayBuffer = () => Promise.reject(new Error("read failed"));
   try {
-    const files: any[] = [];
+    const files: ZipFile[] = [];
     assert.equal(await settles(UploadHelper.downloadImageBytes(files, "1.png", "https://content/1.png")), "settled");
     assert.equal(files.length, 0);
   } finally {

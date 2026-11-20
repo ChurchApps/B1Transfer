@@ -1,4 +1,4 @@
-import { UploadHelper } from "../UploadHelper";
+import { UploadHelper, CsvRow } from "../UploadHelper";
 import {
   ImportHelper, ImportPersonInterface, ImportHouseholdInterface
   , ImportCampusInterface, ImportServiceInterface, ImportServiceTimeInterface
@@ -35,7 +35,7 @@ let personFields: ImportPersonFieldInterface[] = [];
 let personFieldValues: ImportPersonFieldValueInterface[] = [];
 let householdPickupPeople: ImportHouseholdPickupInterface[] = [];
 let lists: ImportListInterface[] = [];
-let acceptedPeopleRows: any[] = [];
+let acceptedPeopleRows: CsvRow[] = [];
 
 // Columns explicitly consumed by loadPeople (and ExportB1ZipHelper.exportPeople).
 // Anything else in people.csv is treated as a custom field and routed to a form.
@@ -117,7 +117,7 @@ const readB1Zip = async (file: File): Promise<ImportDataInterface> => {
   zip.files["forms.csv"] && loadForms(UploadHelper.readCsvString(await zip.file("forms.csv").async("string")));
   zip.files["questions.csv"] && loadQuestions(UploadHelper.readCsvString(await zip.file("questions.csv").async("string")));
   zip.files["formSubmissions.csv"] && loadFormSubmissions(UploadHelper.readCsvString(await zip.file("formSubmissions.csv").async("string")));
-  zip.files["answers.csv"] && loadAnswers(UploadHelper.readCsvString(await zip.file("answers.csv").async("string")));
+  zip.files["answers.csv"] && loadAnswers(UploadHelper.readCsvString<ImportAnswerInterface>(await zip.file("answers.csv").async("string")));
   zip.files["personfields.csv"] && loadPersonFields(UploadHelper.readCsvString(await zip.file("personfields.csv").async("string")));
   zip.files["personfieldvalues.csv"] && loadPersonFieldValues(UploadHelper.readCsvString(await zip.file("personfieldvalues.csv").async("string")));
   zip.files["householdpickup.csv"] && loadHouseholdPickups(UploadHelper.readCsvString(await zip.file("householdpickup.csv").async("string")));
@@ -153,7 +153,7 @@ const readB1Zip = async (file: File): Promise<ImportDataInterface> => {
 
 };
 
-const loadAnswers = (data: any) => {
+const loadAnswers = (data: ImportAnswerInterface[]) => {
   answers = [];
   for (let i = 0; i < data.length; i++) {
     if (data[i].value !== undefined) {
@@ -189,7 +189,7 @@ const parseSubmissionDate = (value: string): Date | undefined => {
   return isNaN(date.getTime()) ? undefined : date;
 };
 
-const loadFormSubmissions = (data: any) => {
+const loadFormSubmissions = (data: CsvRow[]) => {
   formSubmissions = [];
   for (let i = 0; i < data.length; i++) {
     if (data[i].personKey !== undefined) {
@@ -206,7 +206,7 @@ const loadFormSubmissions = (data: any) => {
   }
 };
 
-const loadQuestions = (data: any) => {
+const loadQuestions = (data: CsvRow[]) => {
   questions = [];
   for (let i = 0; i < data.length; i++) {
     if (data[i].title !== undefined) {
@@ -229,7 +229,7 @@ const loadQuestions = (data: any) => {
   }
 };
 
-const loadForms = (data: any) => {
+const loadForms = (data: CsvRow[]) => {
   forms = [];
   for (let i = 0; i < data.length; i++) {
     if (data[i].name !== undefined) {
@@ -258,7 +258,7 @@ const loadForms = (data: any) => {
   }
 };
 
-const loadPersonFields = (data: any) => {
+const loadPersonFields = (data: CsvRow[]) => {
   personFields = [];
   for (let i = 0; i < data.length; i++) {
     if (data[i].name === undefined) continue;
@@ -272,7 +272,7 @@ const loadPersonFields = (data: any) => {
   }
 };
 
-const loadPersonFieldValues = (data: any) => {
+const loadPersonFieldValues = (data: CsvRow[]) => {
   personFieldValues = [];
   for (let i = 0; i < data.length; i++) {
     const row = data[i];
@@ -290,7 +290,7 @@ const parseJson = (value: unknown) => {
 const hhKey = (key: string) => key.startsWith("hh_") ? key : "hh_" + key;
 
 // Rows point at households by the key people.csv carries, which assignHousehold prefixes with hh_.
-const loadHouseholdPickups = (data: any) => {
+const loadHouseholdPickups = (data: CsvRow[]) => {
   householdPickupPeople = [];
   for (let i = 0; i < data.length; i++) {
     const row = data[i];
@@ -310,7 +310,7 @@ const loadHouseholdPickups = (data: any) => {
   }
 };
 
-const loadLists = (data: any) => {
+const loadLists = (data: CsvRow[]) => {
   lists = [];
   for (let i = 0; i < data.length; i++) {
     const row = data[i];
@@ -330,7 +330,7 @@ const loadLists = (data: any) => {
   }
 };
 
-const loadDonations = (data: any) => {
+const loadDonations = (data: CsvRow[]) => {
   batches = [];
   funds = [];
   donations = [];
@@ -381,14 +381,14 @@ const loadDonations = (data: any) => {
 };
 
 // Adds funds nobody has given to yet. Funds already named in donations.csv are kept as they are.
-const loadFunds = (data: any) => {
+const loadFunds = (data: CsvRow[]) => {
   for (let i = 0; i < data.length; i++) {
     const name = data[i].name?.toString().trim();
     if (name) ImportHelper.getOrCreateFund(funds, name, { taxDeductible: csvBool(data[i].taxDeductible), visible: csvBool(data[i].visible) });
   }
 };
 
-const loadAttendance = (data: any, tmpServiceTimes: ImportServiceTimeInterface[]) => {
+const loadAttendance = (data: CsvRow[], tmpServiceTimes: ImportServiceTimeInterface[]) => {
   sessions = [];
   visits = [];
   visitSessions = [];
@@ -410,7 +410,7 @@ const loadAttendance = (data: any, tmpServiceTimes: ImportServiceTimeInterface[]
   }
 };
 
-const campusDetails = (row: any) => ({
+const campusDetails = (row: CsvRow) => ({
   address1: row.campusAddress1,
   address2: row.campusAddress2,
   city: row.campusCity,
@@ -420,7 +420,7 @@ const campusDetails = (row: any) => ({
   website: row.campusWebsite
 });
 
-const loadServiceTimes = (data: any) => {
+const loadServiceTimes = (data: CsvRow[]) => {
   campuses = [];
   services = [];
   serviceTimes = [];
@@ -435,9 +435,9 @@ const loadServiceTimes = (data: any) => {
   return serviceTimes;
 };
 
-const applyGroupFields = (group: ImportGroupInterface, row: any) => {
+const applyGroupFields = (group: ImportGroupInterface, row: CsvRow) => {
   const text = (key: string, prop: keyof ImportGroupInterface) => {
-    if (row[key] !== undefined) (group as any)[prop] = row[key];
+    if (row[key] !== undefined) (group as Record<keyof ImportGroupInterface, unknown>)[prop] = row[key];
   };
   text("about", "about");
   text("photoUrl", "photoUrl");
@@ -461,7 +461,7 @@ const applyGroupFields = (group: ImportGroupInterface, row: any) => {
   ];
   flags.forEach(([key, prop]) => {
     const value = csvBool(row[key]);
-    if (value !== undefined) (group as any)[prop] = value;
+    if (value !== undefined) (group as Record<keyof ImportGroupInterface, unknown>)[prop] = value;
   });
   (["minAgeMonths", "maxAgeMonths", "capacity", "guestCapacity", "volunteerRatio", "minVolunteers"] as const).forEach((key) => {
     const value = csvNumber(row[key]);
@@ -474,7 +474,7 @@ const applyGroupFields = (group: ImportGroupInterface, row: any) => {
   }
 };
 
-const loadGroups = (data: any) => {
+const loadGroups = (data: CsvRow[]) => {
   groups = [];
   groupServiceTimes = [];
   for (let i = 0; i < data.length; i++) {
@@ -493,7 +493,7 @@ const loadGroups = (data: any) => {
   return groups;
 };
 
-const loadGroupMembers = (data: any) => {
+const loadGroupMembers = (data: CsvRow[]) => {
   groupMembers = [];
   for (let i = 0; i < data.length; i++) {
     if (data[i].groupKey === undefined) continue;
@@ -504,7 +504,7 @@ const loadGroupMembers = (data: any) => {
   }
 };
 
-const loadPeople = async (data: any, zip: any) => {
+const loadPeople = async (data: CsvRow[], zip: JSZip) => {
   people = [];
   households = [];
   acceptedPeopleRows = [];
@@ -512,7 +512,8 @@ const loadPeople = async (data: any, zip: any) => {
   for (let i = 0; i < data.length; i++) {
     if (data[i].lastName !== undefined) {
       const rawRow = { ...data[i] };
-      const p = data[i] as ImportPersonInterface;
+      // The parsed row becomes the person; name and contactInfo are filled in below.
+      const p = data[i] as Partial<ImportPersonInterface>;
       p.name = { first: data[i].firstName ?? "", last: data[i].lastName ?? "", middle: data[i].middleName ?? "", nick: data[i].nickName ?? "", display: data[i].displayName ?? "", title: data[i].prefix ?? "", suffix: data[i].suffix ?? "" };
       if (data[i].prefix !== undefined) (p.name as { prefix?: string }).prefix = data[i].prefix;
       p.contactInfo = { address1: data[i].address1 ?? "", address2: data[i].address2 ?? "", city: data[i].city ?? "", state: data[i].state ?? "", zip: data[i].zip ?? "", homePhone: data[i].homePhone ?? "", mobilePhone: data[i].mobilePhone ?? "", workPhone: data[i].workPhone ?? "", email: data[i].email ?? "" };
@@ -539,7 +540,7 @@ const loadPeople = async (data: any, zip: any) => {
           );
         }
       }
-      people.push(p);
+      people.push(p as ImportPersonInterface);
       acceptedPeopleRows.push(rawRow);
     }
   }
@@ -617,7 +618,7 @@ const linkPeopleToCampuses = () => {
   });
 };
 
-const assignHousehold = (households: ImportHouseholdInterface[], person: any) => {
+const assignHousehold = (households: ImportHouseholdInterface[], person: CsvRow) => {
   const householdName: string = person.householdName || person.household;
   const householdKey = person.householdKey?.toString().trim();
   if (householdKey) {

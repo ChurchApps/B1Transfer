@@ -11,7 +11,7 @@ import readPlanningCenterZip from "../helpers/ImportHelpers/ImportPlanningCenter
 import readCustomCsv from "../helpers/ImportHelpers/ImportCustomCsvHelper";
 import readTithelyCsv from "../helpers/ImportHelpers/ImportTithelyHelper";
 import readCCBCsv from "../helpers/ImportHelpers/ImportCCBHelper";
-import { UploadHelper } from "../helpers/UploadHelper";
+import { UploadHelper, CsvRow, SheetRow } from "../helpers/UploadHelper";
 import { FieldMappingUI } from "./FieldMapping";
 import { FormatSelector, FormatOption } from "./FormatSelector";
 import Papa from "papaparse";
@@ -53,7 +53,7 @@ export const TabSource = (props: Props) => {
   const [isDragging, setIsDragging] = useState(false);
 
   const [csvColumns, setCsvColumns] = useState<string[]>([]);
-  const [csvData, setCsvData] = useState<any[]>([]);
+  const [csvData, setCsvData] = useState<SheetRow[]>([]);
   const [showMapping, setShowMapping] = useState(false);
 
   const processFile = useCallback(async (file: File) => {
@@ -61,7 +61,7 @@ export const TabSource = (props: Props) => {
 
     if (props.dataImportSource === DataSourceType.CUSTOM_CSV) {
       try {
-        let data: any[];
+        let data: SheetRow[];
         const ext = file.name.split(".").pop()?.toLowerCase();
         if (ext === "xlsx" || ext === "xls") {
           const reader = new FileReader();
@@ -75,8 +75,8 @@ export const TabSource = (props: Props) => {
           data = sheets[firstSheet];
         } else {
           const text = await file.text();
-          const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
-          data = parsed.data as any[];
+          const parsed = Papa.parse<CsvRow>(text, { header: true, skipEmptyLines: true });
+          data = parsed.data;
         }
         if (!data || data.length === 0) {
           setParseError("File appears to be empty or could not be parsed.");

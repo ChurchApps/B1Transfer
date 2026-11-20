@@ -39,11 +39,12 @@ export class DownloadHelper {
     });
   }
 
-  static getStrippedRecord(r: any) {
-    const names = Object.getOwnPropertyNames(r);
+  static getStrippedRecord<T>(r: T): T {
+    const record = r as Record<string, unknown>;
+    const names = Object.getOwnPropertyNames(record);
     for (let j = names.length - 1; j >= 0; j--) {
       const n = names[j];
-      if (r[n] === "") delete r[n];
+      if (record[n] === "") delete record[n];
     }
     return r;
   }

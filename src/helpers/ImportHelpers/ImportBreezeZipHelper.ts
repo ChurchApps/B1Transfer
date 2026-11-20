@@ -1,4 +1,4 @@
-import { UploadHelper } from "../UploadHelper";
+import { UploadHelper, SheetRow } from "../UploadHelper";
 import {
   ImportHelper, ImportPersonInterface, ImportHouseholdInterface
   , ImportCampusInterface, ImportServiceInterface, ImportServiceTimeInterface
@@ -65,12 +65,12 @@ const readBreezeZip = async (file: File): Promise<ImportDataInterface> => {
   } as ImportDataInterface;
 };
 
-const loadGroups = (data: any, groups: ImportGroupInterface[], groupMembers: ImportGroupMemberInterface[]) => {
+const loadGroups = (data: Record<string, SheetRow[]>, groups: ImportGroupInterface[], groupMembers: ImportGroupMemberInterface[]) => {
   const xlsGroups = Object.keys(data);
   xlsGroups.forEach((groupName, i) => {
     getOrCreateGroup(groups, { importKey: i.toString(), serviceTimeKey: null, startDate: null, endDate: null, name: groupName } as ImportGroupInterface);
     const members = data[groupName];
-    members.forEach((member: any) => {
+    members.forEach((member: SheetRow) => {
       const groupMember = { groupKey: i.toString(), personKey: member["Person ID"], groupId: i.toString(), personId: member["Person ID"] } as ImportGroupMemberInterface;
       groupMembers.push(groupMember);
     });
@@ -90,9 +90,12 @@ const getOrCreateGroup = (groups: ImportGroupInterface[], data: ImportGroupInter
   return result;
 };
 
-const loadDonations = (data: any, people: ImportPersonInterface[], batches: ImportDonationBatchInterface[], funds: ImportFundInterface[], donations: ImportDonationInterface[], fundDonations: ImportFundDonationInterface[]) => {
+// The columns of Breeze's "Total Contributions" sheet that the import reads.
+interface BreezeGivingRow { Amount?: string, Batch?: string, Date?: string, "Fund(s)"?: string, "Person ID"?: string, "Method ID"?: string, Note?: string }
+
+const loadDonations = (data: Record<string, SheetRow[]>, people: ImportPersonInterface[], batches: ImportDonationBatchInterface[], funds: ImportFundInterface[], donations: ImportDonationInterface[], fundDonations: ImportFundDonationInterface[]) => {
   for (let i = 0; i < data["Total Contributions"].length; i++) {
-    const d = data["Total Contributions"][i];
+    const d = data["Total Contributions"][i] as BreezeGivingRow;
     if (d.Amount !== undefined) {
       const batch = ImportHelper.getOrCreateBatch(batches, d.Batch, new Date(d.Date));
       const fund = ImportHelper.getOrCreateFund(funds, d["Fund(s)"]);
@@ -113,7 +116,7 @@ const assignHousehold = (households: ImportHouseholdInterface[], person: ImportP
   person.householdKey = households[households.length - 1].importKey;
 };
 
-const loadPeople = (data: any, people: ImportPersonInterface[], households: ImportHouseholdInterface[]) => {
+const loadPeople = (data: Record<string, SheetRow[]>, people: ImportPersonInterface[], households: ImportHouseholdInterface[]) => {
   const xlssheets = Object.keys(data);
   xlssheets.forEach(sheet => {
     for (let i = 0; i < data[sheet].length; i++) {

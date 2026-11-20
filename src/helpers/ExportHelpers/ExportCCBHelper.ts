@@ -30,7 +30,7 @@ const generateCCBZip = async (importData: ImportDataInterface, updateProgress: (
 const exportPeople = async (importData: ImportDataInterface, runImport: (keyName: string, code: () => void) => Promise<void>) => {
   const { people } = importData;
   const tmpHouseholds: ImportHouseholdInterface[] = [...importData.households];
-  const data: any[] = [];
+  const data: Record<string, unknown>[] = [];
   await runImport("People", async () => {
     people.forEach((p) => {
       const household = tmpHouseholds.find(h => p.householdKey === h.importKey);
@@ -41,7 +41,7 @@ const exportPeople = async (importData: ImportDataInterface, runImport: (keyName
         "Last Name": p.name?.last ?? "",
         "Middle Name": p.name?.middle ?? "",
         "Nickname": p.name?.nick ?? "",
-        "Prefix": (p.name as any)?.title ?? "",
+        "Prefix": p.name?.title ?? "",
         "Suffix": p.name?.suffix ?? "",
         "Email": p.contactInfo?.email ?? "",
         "Home Phone": p.contactInfo?.homePhone ?? "",
@@ -65,7 +65,7 @@ const exportPeople = async (importData: ImportDataInterface, runImport: (keyName
 
 const exportDonations = async (importData: ImportDataInterface, runImport: (keyName: string, code: () => void) => Promise<void>) => {
   const { batches, donations } = importData;
-  const data: any[] = [];
+  const data: Record<string, unknown>[] = [];
 
   await runImport("Donations", async () => {
     donations.forEach((donation) => {

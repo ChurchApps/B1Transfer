@@ -1,9 +1,9 @@
 import React from "react";
-import { Box, Card, Stack, Typography } from "@mui/material";
+import { Box, Card, Stack, SvgIconProps, Typography } from "@mui/material";
 import { Storage, FolderZip, Air, EventNote, GridOn, Paid, Groups } from "@mui/icons-material";
 import { DataSourceType } from "../types";
 
-const ICONS: Record<string, React.ReactElement> = {
+const ICONS: Record<string, React.ReactElement<SvgIconProps>> = {
   [DataSourceType.B1_DB]: <Storage />,
   [DataSourceType.B1_ZIP]: <FolderZip />,
   [DataSourceType.BREEZE_ZIP]: <Air />,
@@ -45,7 +45,7 @@ export const FormatSelector: React.FC<Props> = ({ options, value, onSelect }) =>
         >
           <Stack direction="row" spacing={1.5} alignItems="flex-start">
             <Box sx={{ color: selected ? "primary.main" : "text.secondary", display: "flex", mt: "2px" }}>
-              {React.cloneElement(ICONS[opt.value], { sx: { fontSize: 28 } } as any)}
+              {React.cloneElement(ICONS[opt.value], { sx: { fontSize: 28 } })}
             </Box>
             <Box sx={{ minWidth: 0 }}>
               <Typography variant="body1" sx={{ fontWeight: 600, lineHeight: 1.2, color: selected ? "primary.dark" : "text.primary" }}>
